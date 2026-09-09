@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الذاكرة الرقمية للأجيال - بوابة الدخول الآمنة</title>
+  <title>الذاكرة الرقمية للأجيال - التحقق الحَي</title>
   <style>
     :root {
       --primary-color: #8C2B2B;
@@ -29,7 +29,7 @@
       background: var(--card-bg);
       border: 1px solid #E5DDCB;
       border-radius: 16px;
-      padding: 35px 30px;
+      padding: 30px;
       width: 100%;
       max-width: 420px;
       box-shadow: 0 10px 25px rgba(140, 43, 43, 0.08);
@@ -37,40 +37,16 @@
     }
 
     .logo-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: bold;
       color: var(--primary-color);
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: #777;
-      margin-bottom: 25px;
-    }
-
-    .tab-group {
-      display: flex;
-      border-bottom: 2px solid #E5DDCB;
       margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 10px;
-      background: none;
-      border: none;
-      font-size: 15px;
-      font-weight: bold;
-      color: #888;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s;
-    }
-
-    .tab-btn.active {
-      color: var(--primary-color);
-      border-bottom-color: var(--primary-color);
     }
 
     .input-field {
@@ -81,13 +57,6 @@
       border-radius: 8px;
       box-sizing: border-box;
       font-size: 14px;
-      background: #FAFAFA;
-    }
-
-    .input-field:focus {
-      outline: none;
-      border-color: var(--accent-color);
-      background: #FFF;
     }
 
     .btn-main {
@@ -107,76 +76,39 @@
       background-color: #6E2020;
     }
 
-    .divider {
-      margin: 20px 0;
+    /* حاوية الفيديو والكاميرا المباشرة */
+    .webcam-container {
       position: relative;
-      text-align: center;
+      width: 100%;
+      height: 260px;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 15px 0;
+      border: 2px solid var(--accent-color);
     }
 
-    .divider::before {
-      content: "";
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .scan-overlay {
       position: absolute;
       top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: #E5DDCB;
-      z-index: 1;
-    }
-
-    .divider span {
-      position: relative;
-      z-index: 2;
-      background: var(--card-bg);
-      padding: 0 10px;
-      font-size: 12px;
-      color: #888;
-    }
-
-    .alt-methods {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .alt-btn {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #D1C7BD;
-      border-radius: 8px;
-      background: #FFF;
-      cursor: pointer;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background 0.2s;
-    }
-
-    .alt-btn:hover {
-      background: #F5F0E6;
-    }
-
-    .ai-upload-box {
-      border: 2px dashed var(--accent-color);
-      border-radius: 8px;
-      padding: 15px;
-      background: #FAF8F5;
-      margin-bottom: 15px;
-      cursor: pointer;
-    }
-
-    #preview-img {
-      max-width: 100px;
-      border-radius: 6px;
-      margin-top: 10px;
-      display: none;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      border: 2px dashed rgba(255, 255, 255, 0.7);
+      border-radius: 10px;
+      pointer-events: none;
     }
 
     #status-msg {
       margin-top: 15px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: bold;
     }
   </style>
@@ -189,126 +121,92 @@
 
   <div class="vault-card">
     <div class="logo-title">الذاكرة الرقمية للأجيال</div>
-    <div class="subtitle">Family Vault - التحقق والوصول الآمن</div>
+    <div class="subtitle">Family Vault - نظام التحقق الحي</div>
 
-    <!-- تبويب التنقل بين الدخول وإنشاء الحساب -->
-    <div class="tab-group">
-      <button class="tab-btn active" onclick="switchAuthMode('login')">تسجيل الدخول</button>
-      <button class="tab-btn" onclick="switchAuthMode('register')">إنشاء حساب</button>
-    </div>
-
-    <!-- نموذج اسم المستخدم وكلمة المرور -->
-    <div id="auth-form">
+    <!-- 1. خطوة تسجيل الدخول -->
+    <div id="login-step">
       <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
       <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-      <button class="btn-main" id="submit-btn" onclick="handleStandardAuth()">دخول</button>
+      <button class="btn-main" onclick="proceedToLiveScan()">تسجيل الدخول</button>
     </div>
 
-    <div class="divider">
-      <span>أو استكشف طرق الدخول الذكية</span>
-    </div>
-
-    <!-- الخيارات البيومترية والبصرية -->
-    <div class="alt-methods">
-      <button class="alt-btn" onclick="triggerBiometricAuth()">
-        ☝️ بصمة الوجه/الأصبع
-      </button>
-      <button class="alt-btn" onclick="toggleAIVerifyBox()">
-        📷 التحقق الذكي (AI)
-      </button>
-    </div>
-
-    <!-- صندوق رفع الصور الذكي (مخفي افتراضياً) -->
-    <div id="ai-box" style="display: none; margin-top: 15px;">
-      <div class="ai-upload-box" onclick="document.getElementById('ai-file-input').click()">
-        <span style="font-size: 13px; color: #555;">اضغط لارفاق صورة <b>Coffee</b> أو <b>Mouse</b></span>
-        <input type="file" id="ai-file-input" accept="image/*" style="display: none;" onchange="processAIImage(event)">
-        <br>
-        <img id="preview-img" alt="معاينة الصورة">
+    <!-- 2. خطوة البصمة الحية (الكاميرا) -->
+    <div id="scan-step" style="display: none;">
+      <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
+        وجه الكاميرا نحو <b>Coffee</b> أو <b>Mouse</b> واضغط لالتقاط البصمة البصرية:
+      </p>
+      
+      <div class="webcam-container">
+        <video id="webcam" autoplay playsinline muted></video>
+        <div class="scan-overlay"></div>
       </div>
+
+      <button class="btn-main" onclick="captureAndVerify()">التقاط وتحليل الصورة 📷</button>
     </div>
 
     <div id="status-msg"></div>
   </div>
 
   <script>
-    const MODEL_URL = "./"; // المسار المباشر لملفات نموذج Teachable Machine
-    let model, authMode = 'login';
+    const MODEL_URL = "./"; 
+    let model, videoStream;
 
-    // تحميل نموذج الذكاء الاصطناعي عند فتح الصفحة
+    // تحميل النموذج عند البدء
     async function loadModel() {
       try {
         model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
       } catch (e) {
-        console.log("جاري تجهيز بيئة النموذج...");
+        console.log("جاري استدعاء النموذج...");
       }
     }
     loadModel();
 
-    // التبديل بين وضع تسجيل الدخول وإنشاء الحساب
-    function switchAuthMode(mode) {
-      authMode = mode;
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('submit-btn').innerText = mode === 'login' ? 'دخول' : 'إنشاء حساب وتسجيل البصمة';
-      setStatus('');
-    }
-
-    // تسجيل الدخول العادي
-    function handleStandardAuth() {
+    // الانتقال لخطوة فتح الكاميرا المباشرة بعد تسجيل الدخول
+    async function proceedToLiveScan() {
       const user = document.getElementById('username').value;
-      if (!user) return setStatus('يرجى إدخال اسم المستخدم', 'red');
-      setStatus(authMode === 'login' ? `أهلاً بك مجدداً، ${user}` : `تم إنشاء الحساب بنجاح لـ ${user}`, 'green');
-    }
+      if (!user) return setStatus('يرجى إدخال اسم المستخدم أولاً', 'red');
 
-    // الدخول بواسطة البصمة البيومترية (WebAuthn Native API)
-    async function triggerBiometricAuth() {
-      if (!window.PublicKeyCredential) {
-        return setStatus('المتصفح لا يدعم البصمة البيومترية', 'red');
-      }
-      setStatus('جاري طلب البصمة من الجهاز...', 'orange');
-      
+      document.getElementById('login-step').style.display = 'none';
+      document.getElementById('scan-step').style.display = 'block';
+      setStatus('جاري تشغيل الكاميرا المباشرة...', 'orange');
+
+      // تشغيل الكاميرا الحية
       try {
-        // محاكاة استدعاء واجهة البصمة الخاصة بالنظام/الهاتف
-        setTimeout(() => {
-          setStatus('تم التحقق البيومتري بنجاح! جاري الدخول...', 'green');
-        }, 1200);
+        const video = document.getElementById('webcam');
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = videoStream;
+        setStatus('الكاميرا جاهزة للالتقاط', 'green');
       } catch (err) {
-        setStatus('فشل التحقق من البصمة', 'red');
+        setStatus('تعذر الوصول للكاميرا، يرجى إعطاء الصلاحية', 'red');
       }
     }
 
-    // إظهار/إخفاء واجهة رفع الصور
-    function toggleAIVerifyBox() {
-      const box = document.getElementById('ai-box');
-      box.style.display = box.style.display === 'none' ? 'block' : 'none';
-    }
+    // التقاط إطار مباشر من الفيديو وتحليله
+    async function captureAndVerify() {
+      const video = document.getElementById('webcam');
+      if (!videoStream || !video.srcObject) {
+        return setStatus('الكاميرا غير متصلة', 'red');
+      }
 
-    // فحص صورة الـ Coffee / Mouse بواسطة Teachable Machine
-    async function processAIImage(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+      setStatus('جاري التحليل البيومتري للصورة الحية...', 'orange');
 
-      const imgEl = document.getElementById('preview-img');
-      imgEl.src = URL.createObjectURL(file);
-      imgEl.style.display = 'inline-block';
+      if (!model) await loadModel();
 
-      setStatus('جاري تحليل الصورة عبر النموذج...', 'orange');
+      // تحليل بث الكاميرا الفعلي مباشرة عبر النموذج
+      const predictions = await model.predict(video);
+      let bestMatch = predictions.reduce((max, p) => p.probability > max.probability ? p : max, predictions[0]);
+      let confidence = (bestMatch.probability * 100).toFixed(1);
 
-      imgEl.onload = async () => {
-        if (!model) await loadModel();
+      const label = bestMatch.className.toUpperCase();
+      
+      if ((label === "COFFEE" || label === "MOUSE") && bestMatch.probability > 0.65) {
+        setStatus(`تم التحقق بنجاح! العنصر: ${label} (${confidence}%)`, 'green');
         
-        const predictions = await model.predict(imgEl);
-        let bestMatch = predictions.reduce((max, p) => p.probability > max.probability ? p : max, predictions[0]);
-        let confidence = (bestMatch.probability * 100).toFixed(1);
-
-        const label = bestMatch.className.toUpperCase();
-        if ((label === "COFFEE" || label === "MOUSE") && bestMatch.probability > 0.6) {
-          setStatus(`تم المطابقة بنجاح: ${label} (الدقة: ${confidence}%)`, 'green');
-        } else {
-          setStatus('الصورة المرفقة غير مطابقة لعناصر الوصول (COFFEE / MOUSE)', 'red');
-        }
-      };
+        // إيقاف الكاميرا بعد النجاح
+        videoStream.getTracks().forEach(track => track.stop());
+      } else {
+        setStatus('عنصر غير مطابق! يرجى إظهار Coffee أو Mouse بوضوح أمام الكاميرا', 'red');
+      }
     }
 
     function setStatus(msg, color = 'black') {
