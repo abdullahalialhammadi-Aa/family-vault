@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>الذاكرة الرقمية للأجيال | Family Vault</title>
 
   <!-- حماية الصفحة: لا تُفتح إلا بعد تسجيل الدخول والتحقق الحي من index.html -->
@@ -24,254 +24,478 @@
     :root {
       --bg-color: #fcf8f2;
       --primary-color: #8b5a2b;
+      --primary-dark: #6b4220;
       --secondary-color: #d4a373;
+      --gold: #c5a059;
       --text-color: #2b2d42;
       --card-bg: #ffffff;
       --border-color: #e6ccb2;
+      --bot-bubble: #f4ece1;
+      --user-bubble: #8b5a2b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
     }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
-      margin: 0;
-      padding: 20px;
     }
 
-    /* شريط المستخدم وزر الخروج */
-    .user-bar {
-      max-width: 900px;
-      margin: 0 auto 10px auto;
+    /* الهيكل العام: يملأ ارتفاع الشاشة والمحادثة تأخذ المساحة المتبقية */
+    .app {
+      height: 100vh;
+      height: 100dvh;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: var(--bg-color);
+    }
+
+    /* الشريط العلوي */
+    .topbar {
+      flex: 0 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      font-size: 0.95em;
-      color: var(--primary-color);
+      padding: 10px 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .topbar .user {
       font-weight: bold;
+      color: var(--primary-color);
+      font-size: 0.95em;
     }
 
     .logout-btn {
       background: #fff;
       color: var(--primary-color);
       border: 1px solid var(--primary-color);
-      padding: 8px 16px;
-      font-size: 0.9em;
-    }
-
-    .logout-btn:hover {
-      background: #f4ece1;
-    }
-
-    header {
-      text-align: center;
-      padding: 20px 0;
-      border-bottom: 2px solid var(--border-color);
-      margin-bottom: 30px;
-    }
-
-    header h1 {
-      color: var(--primary-color);
-      margin: 0 0 10px 0;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .simulators-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-
-    .sim-card {
-      background: var(--card-bg);
-      border: 2px solid var(--border-color);
-      border-radius: 12px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      text-align: center;
-    }
-
-    .sim-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      border-color: var(--primary-color);
-    }
-
-    .sim-card img {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-    }
-
-    .sim-card h3 {
-      margin: 10px 0 5px 0;
-      color: var(--primary-color);
-      font-size: 1.1em;
-    }
-
-    .sim-card p {
+      padding: 6px 14px;
+      border-radius: 20px;
       font-size: 0.85em;
-      color: #666;
-      padding: 0 10px 15px 10px;
-      margin: 0;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
     }
 
-    .chat-section {
+    .logout-btn:hover { background: var(--bot-bubble); }
+
+    /* فكرة البرنامج */
+    .hero {
+      flex: 0 0 auto;
+      padding: 16px 16px 14px;
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #8b5a2b 0%, #b8834a 100%);
+    }
+
+    .hero .brand {
+      display: block;
+      font-size: 0.75em;
+      opacity: 0.85;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 1.35em;
+      line-height: 1.35;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 0.9em;
+      line-height: 1.55;
+      opacity: 0.95;
+    }
+
+    /* شريط الشخصيات */
+    .personas-wrap {
+      flex: 0 0 auto;
+      padding: 10px 12px 4px;
+    }
+
+    .personas-title {
+      margin: 0 4px 8px;
+      font-size: 0.85em;
+      font-weight: bold;
+      color: #7a6a5a;
+    }
+
+    .personas {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 4px 4px 8px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .personas::-webkit-scrollbar { display: none; }
+
+    .persona {
+      flex: 0 0 auto;
+      width: 78px;
+      text-align: center;
+      cursor: pointer;
+      scroll-snap-align: start;
+      border: none;
+      background: none;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+    }
+
+    .persona img {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--border-color);
+      padding: 2px;
+      background: #fff;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .persona span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.75em;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .persona small { display: none; }
+
+    .persona.active img {
+      border-color: var(--gold);
+      transform: scale(1.06);
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gold);
+    }
+
+    .persona.active span {
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    /* المحادثة */
+    .chat {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin: 0 12px 12px;
       background: var(--card-bg);
       border: 2px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     .chat-header {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 10px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border-color);
-      padding-bottom: 15px;
-      margin-bottom: 15px;
+      background: #fffdf9;
     }
 
     .chat-header img {
-      width: 50px;
-      height: 50px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid var(--primary-color);
     }
 
-    .chat-header-info h3 {
+    .chat-header h3 {
       margin: 0;
+      font-size: 1em;
       color: var(--primary-color);
     }
 
-    .chat-header-info span {
-      font-size: 0.85em;
+    .chat-header span {
+      display: block;
+      font-size: 0.78em;
       color: #777;
     }
 
-    .chat-box {
-      height: 250px;
+    .online-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2E7D32;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .messages {
+      flex: 1 1 auto;
+      min-height: 140px;
       overflow-y: auto;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       background: #faf7f2;
     }
 
-    .chat-box p {
-      margin: 8px 0;
-      line-height: 1.5;
-    }
-
-    .chat-input-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
+    .msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      line-height: 1.55;
       font-size: 0.95em;
+      overflow-wrap: break-word;
     }
 
-    button {
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--bot-bubble);
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user-bubble);
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg.typing {
+      color: #888;
+      font-style: italic;
+    }
+
+    /* أسئلة مقترحة */
+    .chips {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border-color);
+      background: #fffdf9;
+      scrollbar-width: none;
+    }
+
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex: 0 0 auto;
+      border: 1px solid var(--secondary-color);
+      color: var(--primary-color);
+      background: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 0.8em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .chip:hover { background: var(--bot-bubble); }
+
+    /* صندوق الكتابة */
+    .composer {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border-color);
+      background: #fff;
+    }
+
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      font-size: 16px; /* يمنع تكبير الصفحة تلقائياً في iPhone عند الكتابة */
+      font-family: inherit;
+      outline: none;
+    }
+
+    .composer input:focus { border-color: var(--primary-color); }
+
+    .composer button {
       background: var(--primary-color);
       color: #fff;
       border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      cursor: pointer;
+      padding: 0 20px;
+      border-radius: 24px;
       font-weight: bold;
+      font-family: inherit;
+      font-size: 0.95em;
+      cursor: pointer;
     }
 
-    button:hover {
-      background: #6b4220;
+    .composer button:hover { background: var(--primary-dark); }
+
+    /* شاشات قصيرة (الهاتف بالعرض): نختصر الجملة التعريفية */
+    @media (max-height: 520px) {
+      .hero p { display: none; }
+      .hero h1 { font-size: 1.05em; margin-bottom: 0; }
+      .hero .brand { display: none; }
+    }
+
+    /* شاشات كبيرة: قائمة الشخصيات على اليمين والمحادثة على اليسار */
+    @media (min-width: 860px) {
+      .app {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        grid-template-rows: auto auto 1fr;
+        column-gap: 16px;
+        padding: 0 16px 16px;
+      }
+
+      .topbar, .hero {
+        grid-column: 1 / -1;
+        margin: 0 -16px;
+      }
+
+      .hero { padding: 26px 24px; }
+      .hero h1 { font-size: 1.8em; }
+      .hero p { font-size: 1em; }
+
+      .personas-wrap {
+        grid-row: 3;
+        grid-column: 1;
+        overflow-y: auto;
+        padding: 16px 0 0;
+      }
+
+      .personas {
+        flex-direction: column;
+        overflow: visible;
+        gap: 10px;
+        padding: 0;
+      }
+
+      .persona {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: right;
+        background: var(--card-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 10px;
+        transition: border-color 0.2s, transform 0.2s;
+      }
+
+      .persona:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary-color);
+      }
+
+      .persona.active {
+        border-color: var(--gold);
+        background: #fffaf0;
+      }
+
+      .persona img { width: 56px; height: 56px; flex: 0 0 auto; }
+      .persona.active img { transform: none; box-shadow: none; }
+
+      .persona span {
+        margin: 0;
+        font-size: 0.95em;
+        white-space: normal;
+      }
+
+      .persona small {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.78em;
+        color: #777;
+      }
+
+      .chat {
+        grid-row: 3;
+        grid-column: 2;
+        margin: 16px 0 0;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="user-bar">
-    <span id="welcomeUser">مرحباً بك</span>
-    <button class="logout-btn" onclick="logoutVault()">تسجيل الخروج</button>
-  </div>
+  <div class="app">
 
-  <header>
-    <h1>الذاكرة الرقمية للأجيال (Family Vault)</h1>
-    <p>اختر المحاكي للدردشة واستعادة ذكريات الماضي في مجالات مختلفة</p>
-  </header>
-
-  <div class="container">
-    <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 20px;">اختر شخصية المحاكاة</h2>
-    <div class="simulators-grid">
-
-      <!-- Card 1 -->
-      <div class="sim-card" onclick="selectSimulator('diving')">
-        <img src="Screenshot_9-9-2026_123058_www.bing.com.jpeg" alt="تاريخ الغوص">
-        <h3>الجد علي</h3>
-        <p>تاريخ الغوص، اللؤلؤ، والحياة التراثية القديمة</p>
-      </div>
-
-      <!-- Card 2 -->
-      <div class="sim-card" onclick="selectSimulator('pop')">
-        <img src="Screenshot_9-9-2026_12354_www.bing.com.jpeg" alt="موسيقى البوب">
-        <h3>مايكل جاكسون</h3>
-        <p>ذكريات العصر الذهبي لموسيقى البوب والثامنينات</p>
-      </div>
-
-      <!-- Card 3 -->
-      <div class="sim-card" onclick="selectSimulator('football')">
-        <img src="Screenshot_9-9-2026_123131_www.bing.com.jpeg" alt="تاريخ كرة القدم">
-        <h3>أسطورة الكرة</h3>
-        <p>تاريخ المباريات الكلاسيكية والأساطير القدامى</p>
-      </div>
-
-      <!-- Card 4 -->
-      <div class="sim-card" onclick="selectSimulator('architecture')">
-        <img src="Screenshot_9-9-2026_12363_www.bing.com.jpeg" alt="تاريخ الهندسة">
-        <h3>المهندس المعماري</h3>
-        <p>تطور التخطيط العمراني والمباني الكلاسيكية</p>
-      </div>
-
+    <!-- الشريط العلوي -->
+    <div class="topbar">
+      <span class="user" id="welcomeUser">مرحباً بك</span>
+      <button class="logout-btn" onclick="logoutVault()">تسجيل الخروج</button>
     </div>
 
-    <!-- Active Chat Section -->
-    <div class="chat-section">
+    <!-- فكرة البرنامج بجملة جذابة -->
+    <section class="hero">
+      <span class="brand">Family Vault | الذاكرة الرقمية للأجيال</span>
+      <h1>تحدّث مع الماضي… واسمع الذكريات من أصحابها</h1>
+      <p>شخصيات افتراضية من أجيال مختلفة تروي لك حكايات الغوص، الموسيقى، كرة القدم، والعمارة، وكأنك تجلس معها وجهاً لوجه.</p>
+    </section>
+
+    <!-- شريط الشخصيات -->
+    <div class="personas-wrap">
+      <p class="personas-title">اختر شخصية وابدأ المحادثة 👇</p>
+      <div class="personas" id="personas"></div>
+    </div>
+
+    <!-- المحادثة -->
+    <section class="chat">
       <div class="chat-header">
-        <img id="activeImg" src="Screenshot_9-9-2026_123058_www.bing.com.jpeg" alt="Active Bot">
-        <div class="chat-header-info">
-          <h3 id="activeName">الجد علي</h3>
-          <span id="activeTopic">موضوع المحادثة: تاريخ الغوص والتراث</span>
+        <img id="activeImg" src="" alt="">
+        <div>
+          <h3 id="activeName"></h3>
+          <span><i class="online-dot"></i><span id="activeTopic"></span></span>
         </div>
       </div>
 
-      <div class="chat-box" id="chatBox"></div>
+      <div class="messages" id="chatBox"></div>
 
-      <div class="chat-input-group">
-        <input type="text" id="userInput" placeholder="اكتب سؤالك هنا..." onkeypress="handleKeyPress(event)">
+      <div class="chips" id="chips"></div>
+
+      <div class="composer">
+        <input type="text" id="userInput" placeholder="اكتب سؤالك هنا..." autocomplete="off" onkeydown="handleKeyPress(event)">
         <button onclick="sendMessage()">إرسال</button>
       </div>
-    </div>
+    </section>
+
   </div>
 
   <script>
+    // ============================================================
+    //  الشخصيات: عدّل الأسماء والصور والأسئلة المقترحة من هنا
+    // ============================================================
     const simulators = {
       diving: {
         name: "الجد علي",
-        topic: "موضوع المحادثة: تاريخ الغوص والتراث",
+        shortName: "الجد علي",
+        desc: "تاريخ الغوص، اللؤلؤ، والحياة التراثية القديمة",
+        topic: "تاريخ الغوص والتراث",
         image: "Screenshot_9-9-2026_123058_www.bing.com.jpeg",
         welcome: "أهلاً بك يا بني. سلني عن رحلات الغوص، استخراج اللؤلؤ، أو حياة الفريج القديمة.",
+        suggestions: ["حدثني عن الغوص", "كيف كانت الحياة في الفريج؟", "كيف كان التعليم عند المطوع؟"],
         kb: [
           { keywords: ["غوص", "بحر", "لؤلؤ", "سفينة", "مطرش", "نوخذا"], response: "الغوص كان عماد حياتنا يا بني، نركب المحمل ونقضي أشهر في عرض البحر بالصبر والهمة." },
           { keywords: ["بيت", "فريج", "بناء", "طين", "جيران"], response: "البيوت قديماً كانت بسيطة ومفتوحة، تجمع الجيران والكل يتكاتف وقت الشدة." },
@@ -281,9 +505,12 @@
       },
       pop: {
         name: "مايكل جاكسون (Michael Jackson)",
-        topic: "موضوع المحادثة: تاريخ موسيقى البوب والعصر الذهبي",
+        shortName: "مايكل جاكسون",
+        desc: "ذكريات العصر الذهبي لموسيقى البوب والثمانينات",
+        topic: "تاريخ موسيقى البوب والعصر الذهبي",
         image: "Screenshot_9-9-2026_12354_www.bing.com.jpeg",
         welcome: "Welcome! أهلاً بك في العصر الذهبي لموسيقى البوب. اسألني عن Thriller، رقصة Moonwalk، أو ألبومات الثمانينات.",
+        suggestions: ["قصة رقصة Moonwalk", "حدثني عن ألبوم Thriller", "كيف كانت حفلاتك على المسرح؟"],
         kb: [
           { keywords: ["رغص", "رقص", "مونواك", "moonwalk", "خطوة"], response: "رقصة الـ Moonwalk كانت لحظة استثنائية ظهرت لأول مرة عام 1983 في احتفالية Motown 25!" },
           { keywords: ["ثريلر", "thriller", "ألبوم", "اغنيه", "أغنية"], response: "ألبوم Thriller غير تاريخ الموسيقى وصنع ثورة في عالم الفيديو كليب عام 1982." },
@@ -293,9 +520,12 @@
       },
       football: {
         name: "أسطورة الكرة القديمة",
-        topic: "موضوع المحادثة: الذكريات الكروية وكأس العالم الكلاسيكي",
+        shortName: "أسطورة الكرة",
+        desc: "تاريخ المباريات الكلاسيكية والأساطير القدامى",
+        topic: "الذكريات الكروية وكأس العالم الكلاسيكي",
         image: "Screenshot_9-9-2026_123131_www.bing.com.jpeg",
         welcome: "حياك الله يا كابتن! جاهز للحديث عن تاريخ كرة القدم والأيام الذهبية للجلد المدور؟",
+        suggestions: ["حدثني عن كأس العالم القديم", "حدثني عن بيليه ومارادونا", "كيف كانت الأهداف قديماً؟"],
         kb: [
           { keywords: ["كأس العالم", "مونديال", "بطولة", "ذهب"], response: "بطولات كأس العالم القديمة كانت تلعب بشغف حقيقي وكرة جلدية ثقيلة ممتعة." },
           { keywords: ["هداف", "هدف", "تسديد", "ملعب"], response: "الأهداف القديمة كانت تعتمد على المهارة الفردية والتسديدات القوية من خارج المنطقة." },
@@ -305,9 +535,12 @@
       },
       architecture: {
         name: "المهندس المعماري",
-        topic: "موضوع المحادثة: تاريخ التخطيط العمراني والمجسمات المعمارية",
+        shortName: "المهندس",
+        desc: "تطور التخطيط العمراني والمباني الكلاسيكية",
+        topic: "تاريخ التخطيط العمراني والمجسمات المعمارية",
         image: "Screenshot_9-9-2026_12363_www.bing.com.jpeg",
         welcome: "أهلاً بك. العمارة هي السجل الحي لتاريخ الشعوب. اسألني عن التخطيط المعماري والمخططات القديمة.",
+        suggestions: ["كيف كنتم ترسمون المخططات؟", "حدثني عن التخطيط العمراني", "كيف تطورت مواد البناء؟"],
         kb: [
           { keywords: ["مخطط", "مجسم", "رسم", "تصميم", "هندسة"], response: "قبل البرامج الحديثة، كنا نرسم المخططات باليد بدقة عالية ونبني مجسمات مصغرة من الكرتون والخشب." },
           { keywords: ["مبنى", "عمارة", "تخطيط", "مدن", "بناء"], response: "التخطيط العمراني القديم كان يراعي الطبيعة وحركة الشمس والرياح لتوفير بيئة مريحة." },
@@ -316,8 +549,13 @@
         fallback: "يمكنك الاستفسار عن طرق تصميم المجسمات، الرسم الهندسي اليدوي، أو تاريخ العمارة."
       }
     };
+    // ============================================================
 
     let currentSimKey = "diving";
+    let typingTimer = null;
+
+    // نطاق التشكيل العربي (الفتحة إلى السكون) لإزالته قبل المطابقة
+    const DIACRITICS = new RegExp('[' + String.fromCharCode(0x064B) + '-' + String.fromCharCode(0x0652) + ']', 'g');
 
     window.onload = () => {
       // عرض اسم المستخدم القادم من صفحة الدخول
@@ -325,6 +563,7 @@
       try { user = sessionStorage.getItem('fv_user') || ''; } catch (e) {}
       document.getElementById('welcomeUser').innerText = user ? 'مرحباً ' + user : 'مرحباً بك';
 
+      renderPersonas();
       selectSimulator('diving');
     };
 
@@ -337,16 +576,94 @@
       location.replace('index.html');
     }
 
+    // بناء شريط الشخصيات من القائمة أعلاه
+    function renderPersonas() {
+      const wrap = document.getElementById('personas');
+      wrap.innerHTML = '';
+      Object.keys(simulators).forEach(key => {
+        const sim = simulators[key];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'persona';
+        btn.dataset.key = key;
+        btn.onclick = () => selectSimulator(key);
+
+        const img = document.createElement('img');
+        img.src = sim.image;
+        img.alt = sim.name;
+
+        const text = document.createElement('div');
+        const name = document.createElement('span');
+        name.textContent = sim.shortName || sim.name;
+        const desc = document.createElement('small');
+        desc.textContent = sim.desc;
+        text.append(name, desc);
+
+        btn.append(img, text);
+        wrap.appendChild(btn);
+      });
+    }
+
     function selectSimulator(key) {
       currentSimKey = key;
       const sim = simulators[key];
 
-      document.getElementById('activeName').innerText = sim.name;
-      document.getElementById('activeTopic').innerText = sim.topic;
+      document.querySelectorAll('.persona').forEach(el => {
+        el.classList.toggle('active', el.dataset.key === key);
+      });
+
+      document.getElementById('activeName').textContent = sim.name;
+      document.getElementById('activeTopic').textContent = sim.topic;
       document.getElementById('activeImg').src = sim.image;
 
-      const chatBox = document.getElementById('chatBox');
-      chatBox.innerHTML = `<p><strong>${sim.name}:</strong> ${sim.welcome}</p>`;
+      clearTimeout(typingTimer);
+      document.getElementById('chatBox').innerHTML = '';
+      addMessage(sim.welcome, 'bot');
+      renderChips(sim);
+
+      // على الهاتف: نحرّك شريط الشخصيات حتى تظهر الشخصية المختارة
+      if (window.matchMedia('(max-width: 859px)').matches) {
+        const active = document.querySelector('.persona.active');
+        if (active && active.scrollIntoView) {
+          active.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        }
+      }
+    }
+
+    // الأسئلة المقترحة أسفل المحادثة
+    function renderChips(sim) {
+      const box = document.getElementById('chips');
+      box.innerHTML = '';
+      (sim.suggestions || []).forEach(text => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.textContent = text;
+        chip.onclick = () => sendMessage(text);
+        box.appendChild(chip);
+      });
+    }
+
+    function addMessage(text, who) {
+      const box = document.getElementById('chatBox');
+      const div = document.createElement('div');
+      div.className = 'msg ' + who;
+      div.textContent = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return div;
+    }
+
+    function showTyping() {
+      hideTyping();
+      const div = addMessage('يكتب...', 'bot');
+      div.classList.add('typing');
+      div.id = 'typing';
+    }
+
+    function hideTyping() {
+      const el = document.getElementById('typing');
+      if (el) el.remove();
     }
 
     function normalizeText(text) {
@@ -354,45 +671,39 @@
         .toLowerCase()
         .replace(/[أإآ]/g, "ا")
         .replace(/ة/g, "ه")
-        .replace(/[ً-ْ]/g, "")
+        .replace(DIACRITICS, "")
         .replace(/^ال/, "");
     }
 
-    function sendMessage() {
+    function sendMessage(preset) {
       const inputEl = document.getElementById('userInput');
-      const rawInput = inputEl.value.trim();
-      const chatBox = document.getElementById('chatBox');
-
+      const rawInput = (typeof preset === 'string' ? preset : inputEl.value).trim();
       if (!rawInput) return;
 
-      chatBox.innerHTML += `<p><strong>أنت:</strong> ${rawInput}</p>`;
+      addMessage(rawInput, 'user');
+      inputEl.value = '';
 
       const cleanInput = normalizeText(rawInput);
       const activeSim = simulators[currentSimKey];
-      let foundResponse = null;
+      let foundResponse = activeSim.fallback;
 
       for (const item of activeSim.kb) {
         const matched = item.keywords.some(kw => {
           const cleanKw = normalizeText(kw);
           return cleanInput.includes(cleanKw) || rawInput.toLowerCase().includes(kw);
         });
-
         if (matched) {
           foundResponse = item.response;
           break;
         }
       }
 
-      if (!foundResponse) {
-        foundResponse = activeSim.fallback;
-      }
-
-      setTimeout(() => {
-        chatBox.innerHTML += `<p><strong>${activeSim.name}:</strong> ${foundResponse}</p>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }, 400);
-
-      inputEl.value = '';
+      showTyping();
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        hideTyping();
+        addMessage(foundResponse, 'bot');
+      }, 700);
     }
 
     function handleKeyPress(event) {
