@@ -60,8 +60,10 @@
     }
 
     .btn-main {
+      display: block;
       width: 100%;
       padding: 12px;
+      box-sizing: border-box;
       background-color: var(--primary-color);
       color: #FFF;
       border: none;
@@ -70,10 +72,34 @@
       font-weight: bold;
       cursor: pointer;
       transition: background 0.3s;
+      text-align: center;
     }
 
     .btn-main:hover {
       background-color: #6E2020;
+    }
+
+    .btn-main:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* زر ثانوي (إطار فقط) */
+    .btn-secondary {
+      background-color: #FFF;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background-color: #F7EFEF;
+    }
+
+    .hint {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 10px;
     }
 
     /* حاوية الفيديو والكاميرا المباشرة */
@@ -106,10 +132,23 @@
       pointer-events: none;
     }
 
+    /* الصورة الملتقطة بعد نجاح التحقق */
+    .snapshot {
+      display: block;
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 2px solid var(--accent-color);
+      margin: 15px 0;
+      background: #000;
+    }
+
     #status-msg {
       margin-top: 15px;
       font-size: 14px;
       font-weight: bold;
+      min-height: 20px;
     }
   </style>
 
@@ -125,89 +164,264 @@
 
     <!-- 1. خطوة تسجيل الدخول -->
     <div id="login-step">
-      <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
-      <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-      <button class="btn-main" onclick="proceedToLiveScan()">تسجيل الدخول</button>
+      <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="username">
+      <input type="password" id="password" class="input-field" placeholder="كلمة المرور" autocomplete="current-password">
+      <button class="btn-main" id="login-btn" onclick="login()">تسجيل الدخول</button>
     </div>
 
-    <!-- 2. خطوة البصمة الحية (الكاميرا) -->
+    <!-- 2. خطوة التحقق الحي بالكاميرا (Coffee / Mouse) -->
     <div id="scan-step" style="display: none;">
-      <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
-        وجه الكاميرا نحو <b>Coffee</b> أو <b>Mouse</b> واضغط لالتقاط البصمة البصرية:
-      </p>
-      
+      <p class="hint">وجّه الكاميرا نحو <b>Coffee</b> أو <b>Mouse</b> ثم اضغط زر التحقق:</p>
+
       <div class="webcam-container">
         <video id="webcam" autoplay playsinline muted></video>
         <div class="scan-overlay"></div>
       </div>
 
-      <button class="btn-main" onclick="captureAndVerify()">التقاط وتحليل الصورة 📷</button>
+      <button class="btn-main" id="capture-btn" onclick="captureAndVerify()" disabled>التقاط والتحقق 📷</button>
+
+      <!-- بديل يظهر فقط إذا تعذر تشغيل الكاميرا المباشرة (مثل بعض تطبيقات الهاتف) -->
+      <div id="fallback-box" style="display: none;">
+        <label class="btn-main btn-secondary" for="photo-input">التقاط صورة بكاميرا الجهاز 📸</label>
+        <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;" onchange="onFallbackPhoto(this)">
+        <button class="btn-main btn-secondary" onclick="startCamera()">إعادة محاولة تشغيل الكاميرا المباشرة</button>
+      </div>
+    </div>
+
+    <!-- 3. نجاح التحقق -->
+    <div id="done-step" style="display: none;">
+      <canvas id="snapshot" class="snapshot"></canvas>
+      <button class="btn-main btn-secondary" onclick="logout()">تسجيل الخروج</button>
     </div>
 
     <div id="status-msg"></div>
   </div>
 
   <script>
-    const MODEL_URL = "./"; 
-    let model, videoStream;
+    // ============================================================
+    //  الإعدادات: عدّل من هنا فقط
+    // ============================================================
+    // أسماء المستخدمين وكلمات المرور بالصيغة  "اسم المستخدم": "كلمة المرور"
+    const USERS = {
+      "admin": "1234"
+      // "user2": "5678"
+    };
 
-    // تحميل النموذج عند البدء
-    async function loadModel() {
-      try {
-        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-      } catch (e) {
-        console.log("جاري استدعاء النموذج...");
+    // الفئات المقبولة من نموذج Teachable Machine (كما هي في metadata.json)
+    const ALLOWED_LABELS = ["COFFEE", "MOUSE"];
+
+    // أقل نسبة ثقة مقبولة (0.65 = 65%)
+    const MIN_CONFIDENCE = 0.65;
+
+    // مكان ملفات النموذج model.json و metadata.json و weights.bin
+    const MODEL_URL = "./";
+    // ============================================================
+
+    let model = null;
+    let modelPromise = null;
+    let videoStream = null;
+    let currentUser = "";
+
+    // ---------- تحميل نموذج Coffee / Mouse ----------
+    function loadModel() {
+      if (model) return Promise.resolve(model);
+      if (!modelPromise) {
+        modelPromise = (async () => {
+          if (typeof tmImage === 'undefined') {
+            throw new Error('مكتبة التعرف لم تُحمَّل');
+          }
+          model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+          return model;
+        })().catch(err => {
+          modelPromise = null; // نسمح بإعادة المحاولة لاحقاً
+          throw err;
+        });
       }
+      return modelPromise;
     }
-    loadModel();
 
-    // الانتقال لخطوة فتح الكاميرا المباشرة بعد تسجيل الدخول
-    async function proceedToLiveScan() {
-      const user = document.getElementById('username').value;
-      if (!user) return setStatus('يرجى إدخال اسم المستخدم أولاً', 'red');
+    // نبدأ تحميل النموذج مبكراً أثناء كتابة بيانات الدخول
+    loadModel().catch(err => console.warn('تعذر تحميل النموذج مبكراً:', err));
 
+    // ---------- 1) تسجيل الدخول ----------
+    function login() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value;
+
+      if (!user || !pass) {
+        return setStatus('يرجى إدخال اسم المستخدم وكلمة المرور', 'red');
+      }
+      if (!Object.prototype.hasOwnProperty.call(USERS, user) || USERS[user] !== pass) {
+        return setStatus('اسم المستخدم أو كلمة المرور غير صحيحة', 'red');
+      }
+
+      currentUser = user;
       document.getElementById('login-step').style.display = 'none';
       document.getElementById('scan-step').style.display = 'block';
+      startCamera();
+    }
+
+    // الضغط على Enter داخل الحقول يسجّل الدخول
+    ['username', 'password'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') login();
+      });
+    });
+
+    // ---------- 2) الكاميرا المباشرة ----------
+    async function startCamera() {
+      const video = document.getElementById('webcam');
+      const captureBtn = document.getElementById('capture-btn');
+      const fallbackBox = document.getElementById('fallback-box');
+
+      captureBtn.disabled = true;
+      fallbackBox.style.display = 'none';
       setStatus('جاري تشغيل الكاميرا المباشرة...', 'orange');
 
-      // تشغيل الكاميرا الحية
-      try {
-        const video = document.getElementById('webcam');
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = videoStream;
-        setStatus('الكاميرا جاهزة للالتقاط', 'green');
-      } catch (err) {
-        setStatus('تعذر الوصول للكاميرا، يرجى إعطاء الصلاحية', 'red');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return showFallback(window.isSecureContext
+          ? 'هذا المتصفح لا يدعم الكاميرا المباشرة'
+          : 'الكاميرا المباشرة تعمل فقط عبر رابط https');
+      }
+
+      // نجرب الكاميرا الخلفية أولاً (لتصوير الأغراض)، ثم أي كاميرا متاحة
+      const attempts = [
+        { video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
+        { video: true, audio: false }
+      ];
+
+      let lastError = null;
+      for (const constraints of attempts) {
+        try {
+          stopCamera();
+          videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+          video.srcObject = videoStream;
+          await video.play().catch(() => {});
+          captureBtn.disabled = false;
+          return setStatus('الكاميرا جاهزة، وجّهها نحو Coffee أو Mouse ثم اضغط التقاط والتحقق', 'green');
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      showFallback(describeCameraError(lastError));
+    }
+
+    function describeCameraError(err) {
+      const name = err && err.name ? err.name : '';
+      switch (name) {
+        case 'NotAllowedError':
+        case 'PermissionDeniedError':
+          return 'تم رفض صلاحية الكاميرا، اسمح للكاميرا من إعدادات المتصفح أو التطبيق';
+        case 'NotFoundError':
+        case 'DevicesNotFoundError':
+          return 'لم يتم العثور على كاميرا في هذا الجهاز';
+        case 'NotReadableError':
+        case 'TrackStartError':
+          return 'الكاميرا مستخدمة حالياً من تطبيق آخر، أغلقه وأعد المحاولة';
+        case 'SecurityError':
+          return 'الكاميرا المباشرة تعمل فقط عبر رابط https';
+        default:
+          return 'تعذر تشغيل الكاميرا المباشرة' + (name ? ' (' + name + ')' : '');
       }
     }
 
-    // التقاط إطار مباشر من الفيديو وتحليله
+    // عند تعذر الكاميرا المباشرة نعرض زر التقاط صورة بكاميرا الجهاز حتى لا يتوقف الدخول
+    function showFallback(message) {
+      document.getElementById('fallback-box').style.display = 'block';
+      setStatus(message + '. يمكنك استخدام زر التقاط صورة بكاميرا الجهاز', 'red');
+    }
+
+    // رسم الصورة (من الفيديو أو من ملف) داخل لوحة الالتقاط بحجم مناسب
+    function drawToSnapshot(source, width, height) {
+      const canvas = document.getElementById('snapshot');
+      const scale = Math.min(1, 640 / width);
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+      return canvas;
+    }
+
+    // التقاط إطار مباشر من الفيديو ثم تحليله بالنموذج
     async function captureAndVerify() {
       const video = document.getElementById('webcam');
-      if (!videoStream || !video.srcObject) {
-        return setStatus('الكاميرا غير متصلة', 'red');
+      if (!videoStream || !video.videoWidth) {
+        return setStatus('الكاميرا لم تبدأ بعد، انتظر لحظة ثم أعد المحاولة', 'red');
       }
+      const canvas = drawToSnapshot(video, video.videoWidth, video.videoHeight);
+      await verifyImage(canvas);
+    }
 
-      setStatus('جاري التحليل البيومتري للصورة الحية...', 'orange');
+    // صورة من كاميرا الجهاز (البديل) ثم تحليلها بنفس النموذج
+    function onFallbackPhoto(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = drawToSnapshot(img, img.width, img.height);
+        URL.revokeObjectURL(url);
+        input.value = '';
+        await verifyImage(canvas);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        input.value = '';
+        setStatus('تعذر قراءة الصورة، حاول مرة أخرى', 'red');
+      };
+      img.src = url;
+    }
 
-      if (!model) await loadModel();
+    // ---------- 3) التحقق عبر نموذج Coffee / Mouse ----------
+    async function verifyImage(source) {
+      const captureBtn = document.getElementById('capture-btn');
+      captureBtn.disabled = true;
+      try {
+        if (!model) setStatus('جاري تحميل نموذج التعرف...', 'orange');
+        const m = await loadModel();
 
-      // تحليل بث الكاميرا الفعلي مباشرة عبر النموذج
-      const predictions = await model.predict(video);
-      let bestMatch = predictions.reduce((max, p) => p.probability > max.probability ? p : max, predictions[0]);
-      let confidence = (bestMatch.probability * 100).toFixed(1);
+        setStatus('جاري تحليل الصورة...', 'orange');
+        const predictions = await m.predict(source);
+        const best = predictions.reduce((a, b) => (b.probability > a.probability ? b : a), predictions[0]);
+        const label = best.className.trim().toUpperCase();
+        const confidence = (best.probability * 100).toFixed(1);
 
-      const label = bestMatch.className.toUpperCase();
-      
-      if ((label === "COFFEE" || label === "MOUSE") && bestMatch.probability > 0.65) {
-        setStatus(`تم التحقق بنجاح! العنصر: ${label} (${confidence}%)`, 'green');
-        
-        // إيقاف الكاميرا بعد النجاح
-        videoStream.getTracks().forEach(track => track.stop());
-      } else {
-        setStatus('عنصر غير مطابق! يرجى إظهار Coffee أو Mouse بوضوح أمام الكاميرا', 'red');
+        if (ALLOWED_LABELS.includes(label) && best.probability >= MIN_CONFIDENCE) {
+          finishVerification(label, confidence);
+        } else {
+          setStatus('لم يتم التعرف على Coffee أو Mouse بوضوح (أعلى تطابق: ' + label + ' ' + confidence + '%)، قرّب الغرض وأعد المحاولة', 'red');
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus('تعذر تحميل نموذج التعرف، تأكد من الاتصال بالإنترنت ثم أعد المحاولة', 'red');
+      } finally {
+        if (videoStream) captureBtn.disabled = false;
       }
     }
+
+    function finishVerification(label, confidence) {
+      stopCamera();
+      document.getElementById('scan-step').style.display = 'none';
+      document.getElementById('done-step').style.display = 'block';
+      setStatus('تم التحقق بنجاح ✅ العنصر: ' + label + ' (' + confidence + '%) - مرحباً ' + currentUser, 'green');
+    }
+
+    function logout() {
+      stopCamera();
+      location.reload();
+    }
+
+    function stopCamera() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+      const video = document.getElementById('webcam');
+      if (video) video.srcObject = null;
+    }
+
+    // إيقاف الكاميرا عند مغادرة الصفحة
+    window.addEventListener('pagehide', stopCamera);
 
     function setStatus(msg, color = 'black') {
       const el = document.getElementById('status-msg');
