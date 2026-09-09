@@ -39,7 +39,6 @@
       margin: 0 auto;
     }
 
-    /* Simulators Selection Cards */
     .simulators-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -82,7 +81,6 @@
       margin: 0;
     }
 
-    /* Active Chat Interface */
     .chat-section {
       background: var(--card-bg);
       border: 2px solid var(--border-color);
@@ -169,34 +167,33 @@
   </header>
 
   <div class="container">
-    <!-- Simulator Selection Hub -->
     <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 20px;">اختر شخصية المحاكاة</h2>
     <div class="simulators-grid">
       
-      <!-- Card 1: Diving & Heritage -->
+      <!-- Card 1 -->
       <div class="sim-card" onclick="selectSimulator('diving')">
-        <img src="Screenshot_9-9-2026_123058_www.bing.com.jpeg" alt="تاريخ الغوص">
+        <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=500&auto=format&fit=crop" alt="تاريخ الغوص">
         <h3>الجد علي</h3>
         <p>تاريخ الغوص، اللؤلؤ، والحياة التراثية القديمة</p>
       </div>
 
-      <!-- Card 2: Pop Music History -->
+      <!-- Card 2 -->
       <div class="sim-card" onclick="selectSimulator('pop')">
-        <img src="Screenshot_9-9-2026_12354_www.bing.com.jpeg" alt="مايكل جاكسون">
+        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop" alt="موسيقى البوب">
         <h3>مايكل جاكسون</h3>
         <p>ذكريات العصر الذهبي لموسيقى البوب والثامنينات</p>
       </div>
 
-      <!-- Card 3: Football History -->
+      <!-- Card 3 -->
       <div class="sim-card" onclick="selectSimulator('football')">
-        <img src="Screenshot_9-9-2026_123131_www.bing.com.jpeg" alt="تاريخ كرة القدم">
+        <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop" alt="تاريخ كرة القدم">
         <h3>أسطورة الكرة</h3>
         <p>تاريخ المباريات الكلاسيكية والأساطير القدامى</p>
       </div>
 
-      <!-- Card 4: Architecture History -->
+      <!-- Card 4 -->
       <div class="sim-card" onclick="selectSimulator('architecture')">
-        <img src="Screenshot_9-9-2026_12363_www.bing.com.jpeg" alt="تاريخ الهندسة">
+        <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format&fit=crop" alt="تاريخ الهندسة">
         <h3>المهندس المعماري</h3>
         <p>تطور التخطيط العمراني والمباني الكلاسيكية</p>
       </div>
@@ -206,16 +203,14 @@
     <!-- Active Chat Section -->
     <div class="chat-section">
       <div class="chat-header">
-        <img id="activeImg" src="Screenshot_9-9-2026_123058_www.bing.com.jpeg" alt="Active Bot">
+        <img id="activeImg" src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=500&auto=format&fit=crop" alt="Active Bot">
         <div class="chat-header-info">
           <h3 id="activeName">الجد علي</h3>
           <span id="activeTopic">موضوع المحادثة: تاريخ الغوص والتراث</span>
         </div>
       </div>
 
-      <div class="chat-box" id="chatBox">
-        <!-- Messages will appear here -->
-      </div>
+      <div class="chat-box" id="chatBox"></div>
 
       <div class="chat-input-group">
         <input type="text" id="userInput" placeholder="اكتب سؤالك هنا..." onkeypress="handleKeyPress(event)">
@@ -225,24 +220,23 @@
   </div>
 
   <script>
-    // Simulator Configurations & Knowledge Base
     const simulators = {
       diving: {
         name: "الجد علي",
         topic: "موضوع المحادثة: تاريخ الغوص والتراث",
-        image: "Screenshot_9-9-2026_123058_www.bing.com.jpeg",
+        image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=500&auto=format&fit=crop",
         welcome: "أهلاً بك يا بني. سلني عن رحلات الغوص، استخراج اللؤلؤ، أو حياة الفريج القديمة.",
         kb: [
           { keywords: ["غوص", "بحر", "لؤلؤ", "سفينة", "مطرش", "نوخذا"], response: "الغوص كان عماد حياتنا يا بني، نركب المحمل ونقضي أشهر في عرض البحر بالصبر والهمة." },
           { keywords: ["بيت", "فريج", "بناء", "طين", "جيران"], response: "البيوت قديماً كانت بسيطة ومفتوحة، تجمع الجيران والكل يتكاتف وقت الشدة." },
-          { keywords: ["تعليم", "مطوع", "دراسة", "قرآن"], response: "كنا نتعلم عند المطوع تحت ظل الأشجار، نفظ القرآن ونحسب بأبسط الطرق." }
+          { keywords: ["تعليم", "مطوع", "دراسة", "قرآن"], response: "كنا نتعلم عند المطوع تحت ظل الأشجار، نحفظ القرآن ونحسب بأبسط الطرق." }
         ],
         fallback: "هذه التفاصيل قديمة على ذاكرتي يا بني، لكن يمكنك سؤالي عن الغوص، اللؤلؤ، أو الحياة في الفريج."
       },
       pop: {
         name: "مايكل جاكسون (Michael Jackson)",
         topic: "موضوع المحادثة: تاريخ موسيقى البوب والعصر الذهبي",
-        image: "Screenshot_9-9-2026_12354_www.bing.com.jpeg",
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop",
         welcome: "Welcome! أهلاً بك في العصر الذهبي لموسيقى البوب. اسألني عن Thriller، رقصة Moonwalk، أو ألبومات الثمانينات.",
         kb: [
           { keywords: ["رغص", "رقص", "مونواك", "moonwalk", "خطوة"], response: "رقصة الـ Moonwalk كانت لحظة استثنائية ظهرت لأول مرة عام 1983 في احتفالية Motown 25!" },
@@ -254,11 +248,11 @@
       football: {
         name: "أسطورة الكرة القديمة",
         topic: "موضوع المحادثة: الذكريات الكروية وكأس العالم الكلاسيكي",
-        image: "Screenshot_9-9-2026_123131_www.bing.com.jpeg",
+        image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop",
         welcome: "حياك الله يا كابتن! جاهز للحديث عن تاريخ كرة القدم والأيام الذهبية للجلد المدور؟",
         kb: [
           { keywords: ["كأس العالم", "مونديال", "بطولة", "ذهب"], response: "بطولات كأس العالم القديمة كانت تلعب بشغف حقيقي وكرة جلدية ثقيلة ممتعة." },
-          { keywords: ["هداف", "هدف", "هدف", "تسديد", "ملعب"], response: "الأهداف القديمة كانت تعتمد على المهاره الفردية والتسديدات القوية من خارج المنطقة." },
+          { keywords: ["هداف", "هدف", "تسديد", "ملعب"], response: "الأهداف القديمة كانت تعتمد على المهارة الفردية والتسديدات القوية من خارج المنطقة." },
           { keywords: ["لاعب", "أسطورة", "بيليه", "مارادونا", "فريق"], response: "جيل الأساطير القدامى صنع مجد اللعبة قبل دخول الحسابات التجارية والتكتيكات المعقدة." }
         ],
         fallback: "اسألني عن المباريات التاريخية، مباريات كأس العالم القديمة، أو أساطير كرة القدم."
@@ -266,7 +260,7 @@
       architecture: {
         name: "المهندس المعماري",
         topic: "موضوع المحادثة: تاريخ التخطيط العمراني والمجسمات المعمارية",
-        image: "Screenshot_9-9-2026_12363_www.bing.com.jpeg",
+        image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format&fit=crop",
         welcome: "أهلاً بك. العمارة هي السجل الحي لتاريخ الشعوب. اسألني عن التخطيط المعماري والمخططات القديمة.",
         kb: [
           { keywords: ["مخطط", "مجسم", "رسم", "تصميم", "هندسة"], response: "قبل البرامج الحديثة، كنا نرسم المخططات باليد بدقة عالية ونبني مجسمات مصغرة من الكرتون والخشب." },
@@ -279,12 +273,10 @@
 
     let currentSimKey = "diving";
 
-    // Initialize Page
     window.onload = () => {
       selectSimulator('diving');
     };
 
-    // Switch Simulator Function
     function selectSimulator(key) {
       currentSimKey = key;
       const sim = simulators[key];
@@ -297,7 +289,6 @@
       chatBox.innerHTML = `<p><strong>${sim.name}:</strong> ${sim.welcome}</p>`;
     }
 
-    // Text Normalization
     function normalizeText(text) {
       return text
         .toLowerCase()
@@ -307,7 +298,6 @@
         .replace(/^ال/, "");
     }
 
-    // Send Message Logic
     function sendMessage() {
       const inputEl = document.getElementById('userInput');
       const rawInput = inputEl.value.trim();
@@ -315,14 +305,12 @@
 
       if (!rawInput) return;
 
-      // Render User Message
       chatBox.innerHTML += `<p><strong>أنت:</strong> ${rawInput}</p>`;
 
       const cleanInput = normalizeText(rawInput);
       const activeSim = simulators[currentSimKey];
       let foundResponse = null;
 
-      // Matching Logic
       for (const item of activeSim.kb) {
         const matched = item.keywords.some(kw => {
           const cleanKw = normalizeText(kw);
@@ -339,7 +327,6 @@
         foundResponse = activeSim.fallback;
       }
 
-      // Render Bot Response
       setTimeout(() => {
         chatBox.innerHTML += `<p><strong>${activeSim.name}:</strong> ${foundResponse}</p>`;
         chatBox.scrollTop = chatBox.scrollHeight;
