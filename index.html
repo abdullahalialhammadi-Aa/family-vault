@@ -49,6 +49,31 @@
       margin-bottom: 20px;
     }
 
+    /* تبويبات تسجيل الدخول / إنشاء حساب */
+    .tab-group {
+      display: flex;
+      border-bottom: 1px solid #E5DDCB;
+      margin-bottom: 15px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #888;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
     .input-field {
       width: 100%;
       padding: 12px;
@@ -162,11 +187,27 @@
     <div class="logo-title">الذاكرة الرقمية للأجيال</div>
     <div class="subtitle">Family Vault - نظام التحقق الحي</div>
 
-    <!-- 1. خطوة تسجيل الدخول -->
-    <div id="login-step">
-      <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="username">
-      <input type="password" id="password" class="input-field" placeholder="كلمة المرور" autocomplete="current-password">
-      <button class="btn-main" id="login-btn" onclick="login()">تسجيل الدخول</button>
+    <!-- 1. خطوة تسجيل الدخول / إنشاء حساب -->
+    <div id="auth-step">
+      <div class="tab-group">
+        <button class="tab-btn active" id="tab-login" onclick="switchAuthMode('login')">تسجيل الدخول</button>
+        <button class="tab-btn" id="tab-register" onclick="switchAuthMode('register')">إنشاء حساب</button>
+      </div>
+
+      <!-- نموذج تسجيل الدخول -->
+      <div id="login-form">
+        <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="username">
+        <input type="password" id="password" class="input-field" placeholder="كلمة المرور" autocomplete="current-password">
+        <button class="btn-main" id="login-btn" onclick="login()">دخول</button>
+      </div>
+
+      <!-- نموذج إنشاء حساب جديد -->
+      <div id="register-form" style="display: none;">
+        <input type="text" id="reg-username" class="input-field" placeholder="اسم المستخدم الجديد" autocomplete="username">
+        <input type="password" id="reg-password" class="input-field" placeholder="كلمة المرور (4 أحرف على الأقل)" autocomplete="new-password">
+        <input type="password" id="reg-confirm" class="input-field" placeholder="تأكيد كلمة المرور" autocomplete="new-password">
+        <button class="btn-main" id="register-btn" onclick="register()">إنشاء الحساب</button>
+      </div>
     </div>
 
     <!-- 2. خطوة التحقق الحي بالكاميرا (Coffee / Mouse) -->
@@ -201,7 +242,8 @@
     // ============================================================
     //  الإعدادات: عدّل من هنا فقط
     // ============================================================
-    // أسماء المستخدمين وكلمات المرور بالصيغة  "اسم المستخدم": "كلمة المرور"
+    // حسابات ثابتة جاهزة بالصيغة  "اسم المستخدم": "كلمة المرور"
+    // (الحسابات الجديدة من تبويب "إنشاء حساب" تُحفظ في متصفح الجهاز نفسه)
     const USERS = {
       "admin": "1234"
       // "user2": "5678"
@@ -215,6 +257,9 @@
 
     // مكان ملفات النموذج model.json و metadata.json و weights.bin
     const MODEL_URL = "./";
+
+    // مفتاح حفظ الحسابات الجديدة في متصفح الجهاز
+    const ACCOUNTS_KEY = "fv_accounts";
     // ============================================================
 
     let model = null;
@@ -243,28 +288,137 @@
     // نبدأ تحميل النموذج مبكراً أثناء كتابة بيانات الدخول
     loadModel().catch(err => console.warn('تعذر تحميل النموذج مبكراً:', err));
 
-    // ---------- 1) تسجيل الدخول ----------
-    function login() {
+    // ---------- الحسابات المحفوظة في الجهاز ----------
+    function loadAccounts() {
+      try {
+        return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveAccounts(accounts) {
+      try {
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // البحث عن اسم مستخدم بدون تفريق بين الأحرف الكبيرة والصغيرة
+    function findUserKey(obj, name) {
+      const lower = name.toLowerCase();
+      return Object.keys(obj).find(k => k.toLowerCase() === lower) || null;
+    }
+
+    // تشفير كلمة المرور قبل حفظها (SHA-256) حتى لا تُحفظ كنص واضح
+    async function hashPassword(password) {
+      if (window.crypto && crypto.subtle && window.TextEncoder) {
+        const data = new TextEncoder().encode(password);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return 'sha256:' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      return 'plain:' + password;
+    }
+
+    async function passwordMatches(stored, password) {
+      if (!stored) return false;
+      if (stored.startsWith('plain:')) return stored === 'plain:' + password;
+      return stored === await hashPassword(password);
+    }
+
+    // ---------- 1) التبديل بين تسجيل الدخول وإنشاء حساب ----------
+    function switchAuthMode(mode) {
+      const isLogin = mode === 'login';
+      document.getElementById('login-form').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('register-form').style.display = isLogin ? 'none' : 'block';
+      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-register').classList.toggle('active', !isLogin);
+      setStatus('');
+    }
+
+    // إنشاء حساب جديد (يُحفظ في متصفح هذا الجهاز)
+    async function register() {
+      const user = document.getElementById('reg-username').value.trim();
+      const pass = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+
+      if (user.length < 3) return setStatus('اسم المستخدم يجب أن يكون 3 أحرف على الأقل', 'red');
+      if (pass.length < 4) return setStatus('كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'red');
+      if (pass !== confirm) return setStatus('كلمتا المرور غير متطابقتين', 'red');
+
+      const accounts = loadAccounts();
+      if (findUserKey(USERS, user) || findUserKey(accounts, user)) {
+        return setStatus('اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر', 'red');
+      }
+
+      const btn = document.getElementById('register-btn');
+      btn.disabled = true;
+      try {
+        accounts[user] = { hash: await hashPassword(pass), createdAt: new Date().toISOString() };
+        if (!saveAccounts(accounts)) {
+          return setStatus('المتصفح لا يسمح بحفظ الحسابات على هذا الجهاز', 'red');
+        }
+      } finally {
+        btn.disabled = false;
+      }
+
+      // تفريغ حقول التسجيل والانتقال لتسجيل الدخول بالاسم الجديد
+      document.getElementById('reg-username').value = '';
+      document.getElementById('reg-password').value = '';
+      document.getElementById('reg-confirm').value = '';
+      switchAuthMode('login');
+      document.getElementById('username').value = user;
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+      setStatus('تم إنشاء الحساب بنجاح ✅ أدخل كلمة المرور لتسجيل الدخول', 'green');
+    }
+
+    // تسجيل الدخول (الحسابات الثابتة + الحسابات المحفوظة في الجهاز)
+    async function login() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value;
 
       if (!user || !pass) {
         return setStatus('يرجى إدخال اسم المستخدم وكلمة المرور', 'red');
       }
-      if (!Object.prototype.hasOwnProperty.call(USERS, user) || USERS[user] !== pass) {
+
+      let ok = false;
+      let displayName = user;
+
+      const builtinKey = findUserKey(USERS, user);
+      if (builtinKey && USERS[builtinKey] === pass) {
+        ok = true;
+        displayName = builtinKey;
+      } else {
+        const accounts = loadAccounts();
+        const key = findUserKey(accounts, user);
+        if (key) {
+          ok = await passwordMatches(accounts[key].hash, pass);
+          displayName = key;
+        }
+      }
+
+      if (!ok) {
         return setStatus('اسم المستخدم أو كلمة المرور غير صحيحة', 'red');
       }
 
-      currentUser = user;
-      document.getElementById('login-step').style.display = 'none';
+      currentUser = displayName;
+      document.getElementById('auth-step').style.display = 'none';
       document.getElementById('scan-step').style.display = 'block';
       startCamera();
     }
 
-    // الضغط على Enter داخل الحقول يسجّل الدخول
+    // الضغط على Enter داخل الحقول ينفّذ الزر المناسب
     ['username', 'password'].forEach(id => {
       document.getElementById(id).addEventListener('keydown', e => {
         if (e.key === 'Enter') login();
+      });
+    });
+    ['reg-username', 'reg-password', 'reg-confirm'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') register();
       });
     });
 
