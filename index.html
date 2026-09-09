@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الذاكرة الرقمية للأجيال | Family Vault</title>
+  <style>
+    :root {
+      --bg-color: #fcf8f2;
+      --primary-color: #8b5a2b;
+      --secondary-color: #d4a373;
+      --text-color: #2b2d42;
+      --card-bg: #ffffff;
+      --border-color: #e6ccb2;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      color: var(--primary-color);
+      margin: 0 0 10px 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Timeline Styles */
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      right: 50%;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--secondary-color);
+      transform: translateX(50%);
+    }
+
+    .timeline-item {
+      margin-bottom: 30px;
+      position: relative;
+      width: 50%;
+    }
+
+    .timeline-item.right {
+      right: 50%;
+      padding-right: 30px;
+    }
+
+    .timeline-item.left {
+      right: 0;
+      padding-left: 30px;
+      text-align: left;
+    }
+
+    .timeline-content {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    .timeline-date {
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #faedcd;
+      color: #d4a373;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      margin-top: 10px;
+    }
+
+    /* Chatbot Styles */
+    .chat-section {
+      margin-top: 50px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .chat-box {
+      height: 150px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #faffdb10;
+    }
+
+    .chat-input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    button {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #6b4220;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>الذاكرة الرقمية للأجيال (Family Vault)</h1>
+    <p>أرشفة وتوثيق التاريخ الشفوي والقصص العائلية</p>
+  </header>
+
+  <div class="container">
+    <!-- Timeline Section -->
+    <h2 style="text-align: center; color: var(--primary-color);">الخط الزمني للذكريات</h2>
+    <div class="timeline" id="timeline"></div>
+
+    <!-- Expert Chatbot Section -->
+    <div class="chat-section">
+      <h3>اسأل الجد (نظام خبير لمُحاكاة الذكريات)</h3>
+      <div class="chat-box" id="chatBox">
+        <p><strong>الجد علي:</strong> أهلاً بك يا بني، سلني عن ذكريات الغوص، أو أيام الزمان القديم...</p>
+      </div>
+      <div class="chat-input-group">
+        <input type="text" id="userInput" placeholder="اكتب سؤالك هنا (مثال: حدثني عن الغوص)...">
+        <button onclick="askGrandpa()">إرسال</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sample Data
+    const stories = [
+      {
+        title: "رحلة الغوص الأولى",
+        author: "الجد علي بن سيف",
+        date: "1955-06-15",
+        content: "كانت الرحلة شاقة ولكن العلم والهمة كانا سلاحنا في مواجهة أمواج البحر.",
+        tag: "تاريخ شفوي"
+      },
+      {
+        title: "بناء البيت الأول",
+        author: "الجدة فاطمة",
+        date: "1968-03-20",
+        content: "اجتمعت العائلة كلها لبناء السقف قبل موسم الأمطار.",
+        tag: "ذكريات عائلية"
+      }
+    ];
+
+    // Render Timeline
+    const timelineEl = document.getElementById('timeline');
+    stories.forEach((story, index) => {
+      const side = index % 2 === 0 ? 'right' : 'left';
+      const item = document.createElement('div');
+      item.className = `timeline-item ${side}`;
+      item.innerHTML = `
+        <div class="timeline-content">
+          <div class="timeline-date">${story.date} - ${story.author}</div>
+          <h4>${story.title}</h4>
+          <p>${story.content}</p>
+          <span class="tag">${story.tag}</span>
+        </div>
+      `;
+      timelineEl.appendChild(item);
+    });
+
+    // Expert System Chatbot Simulation
+    const knowledgeBase = {
+      "غوص": "يا بني، الغوص كان مصدر رزقنا، كنا نقضي أسابيع في البحر ونستخرج اللؤلؤ والصبر حليفنا.",
+      "بيت": "البيوت قديماً كانت تجمع القلوب قبل الأجساد، والخير كان يعم الفريج كامل.",
+      "مدرسة": "في أياَمنا، كنا نتعلم عند المطوع حفظ القرآن والحساب تحت ظل الأشجار."
+    };
+
+    function askGrandpa() {
+      const input = document.getElementById('userInput').value;
+      const chatBox = document.getElementById('chatBox');
+      if (!input.trim()) return;
+
+      chatBox.innerHTML += `<p><strong>أنت:</strong> ${input}</p>`;
+      
+      let response = "يا بني، هذه الأيام مضت ولم أحضرها، لكن اسألني عن الغوص، البيت، أو التعليم القديم.";
+      for (let key in knowledgeBase) {
+        if (input.includes(key)) {
+          response = knowledgeBase[key];
+          break;
+        }
+      }
+
+      setTimeout(() => {
+        chatBox.innerHTML += `<p><strong>الجد علي:</strong> ${response}</p>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 500);
+
+      document.getElementById('userInput').value = '';
+    }
+  </script>
+</body>
+</html>
