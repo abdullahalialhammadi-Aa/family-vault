@@ -1,0 +1,22 @@
+{
+  "modelMetadata": {
+    "tfjsVersion": "1.7.4",
+    "tmVersion": "2.4.16",
+    "packageVersion": "0.8.4-alpha2",
+    "packageName": "@teachablemachine/image",
+    "timeStamp": "2026-09-09T06:05:39.376Z",
+    "userMetadata": {},
+    "modelName": "tm-my-image-model",
+    "labels": [
+      "MOUSE",
+      "COFFEE"
+    ],
+    "imageSize": 224
+  },
+  "modelTopology": {
+    "class_name": "Sequential",
+    "config": {
+      "name": "sequential_4"
+    }
+  }
+}
