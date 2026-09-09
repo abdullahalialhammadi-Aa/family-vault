@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الذاكرة الرقمية للأجيال | Family Vault</title>
+
+  <!-- حماية الصفحة: لا تُفتح إلا بعد تسجيل الدخول والتحقق الحي من index.html -->
+  <script>
+    (function () {
+      var verified = true;
+      try {
+        verified = sessionStorage.getItem('fv_verified') === '1';
+      } catch (e) {
+        verified = true; // إذا كان المتصفح يمنع التخزين نسمح بالعرض بدل حجب الصفحة
+      }
+      if (!verified) {
+        location.replace('index.html');
+      }
+    })();
+  </script>
+
+  <style>
+    :root {
+      --bg-color: #fcf8f2;
+      --primary-color: #8b5a2b;
+      --secondary-color: #d4a373;
+      --text-color: #2b2d42;
+      --card-bg: #ffffff;
+      --border-color: #e6ccb2;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* شريط المستخدم وزر الخروج */
+    .user-bar {
+      max-width: 900px;
+      margin: 0 auto 10px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95em;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    .logout-btn {
+      background: #fff;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      padding: 8px 16px;
+      font-size: 0.9em;
+    }
+
+    .logout-btn:hover {
+      background: #f4ece1;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      color: var(--primary-color);
+      margin: 0 0 10px 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .simulators-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .sim-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-align: center;
+    }
+
+    .sim-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      border-color: var(--primary-color);
+    }
+
+    .sim-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+    }
+
+    .sim-card h3 {
+      margin: 10px 0 5px 0;
+      color: var(--primary-color);
+      font-size: 1.1em;
+    }
+
+    .sim-card p {
+      font-size: 0.85em;
+      color: #666;
+      padding: 0 10px 15px 10px;
+      margin: 0;
+    }
+
+    .chat-section {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+
+    .chat-header img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+    }
+
+    .chat-header-info h3 {
+      margin: 0;
+      color: var(--primary-color);
+    }
+
+    .chat-header-info span {
+      font-size: 0.85em;
+      color: #777;
+    }
+
+    .chat-box {
+      height: 250px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #faf7f2;
+    }
+
+    .chat-box p {
+      margin: 8px 0;
+      line-height: 1.5;
+    }
+
+    .chat-input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.95em;
+    }
+
+    button {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #6b4220;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="user-bar">
+    <span id="welcomeUser">مرحباً بك</span>
+    <button class="logout-btn" onclick="logoutVault()">تسجيل الخروج</button>
+  </div>
+
+  <header>
+    <h1>الذاكرة الرقمية للأجيال (Family Vault)</h1>
+    <p>اختر المحاكي للدردشة واستعادة ذكريات الماضي في مجالات مختلفة</p>
+  </header>
+
+  <div class="container">
+    <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 20px;">اختر شخصية المحاكاة</h2>
+    <div class="simulators-grid">
+
+      <!-- Card 1 -->
+      <div class="sim-card" onclick="selectSimulator('diving')">
+        <img src="Screenshot_9-9-2026_123058_www.bing.com.jpeg" alt="تاريخ الغوص">
+        <h3>الجد علي</h3>
+        <p>تاريخ الغوص، اللؤلؤ، والحياة التراثية القديمة</p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="sim-card" onclick="selectSimulator('pop')">
+        <img src="Screenshot_9-9-2026_12354_www.bing.com.jpeg" alt="موسيقى البوب">
+        <h3>مايكل جاكسون</h3>
+        <p>ذكريات العصر الذهبي لموسيقى البوب والثامنينات</p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="sim-card" onclick="selectSimulator('football')">
+        <img src="Screenshot_9-9-2026_123131_www.bing.com.jpeg" alt="تاريخ كرة القدم">
+        <h3>أسطورة الكرة</h3>
+        <p>تاريخ المباريات الكلاسيكية والأساطير القدامى</p>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="sim-card" onclick="selectSimulator('architecture')">
+        <img src="Screenshot_9-9-2026_12363_www.bing.com.jpeg" alt="تاريخ الهندسة">
+        <h3>المهندس المعماري</h3>
+        <p>تطور التخطيط العمراني والمباني الكلاسيكية</p>
+      </div>
+
+    </div>
+
+    <!-- Active Chat Section -->
+    <div class="chat-section">
+      <div class="chat-header">
+        <img id="activeImg" src="Screenshot_9-9-2026_123058_www.bing.com.jpeg" alt="Active Bot">
+        <div class="chat-header-info">
+          <h3 id="activeName">الجد علي</h3>
+          <span id="activeTopic">موضوع المحادثة: تاريخ الغوص والتراث</span>
+        </div>
+      </div>
+
+      <div class="chat-box" id="chatBox"></div>
+
+      <div class="chat-input-group">
+        <input type="text" id="userInput" placeholder="اكتب سؤالك هنا..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">إرسال</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const simulators = {
+      diving: {
+        name: "الجد علي",
+        topic: "موضوع المحادثة: تاريخ الغوص والتراث",
+        image: "Screenshot_9-9-2026_123058_www.bing.com.jpeg",
+        welcome: "أهلاً بك يا بني. سلني عن رحلات الغوص، استخراج اللؤلؤ، أو حياة الفريج القديمة.",
+        kb: [
+          { keywords: ["غوص", "بحر", "لؤلؤ", "سفينة", "مطرش", "نوخذا"], response: "الغوص كان عماد حياتنا يا بني، نركب المحمل ونقضي أشهر في عرض البحر بالصبر والهمة." },
+          { keywords: ["بيت", "فريج", "بناء", "طين", "جيران"], response: "البيوت قديماً كانت بسيطة ومفتوحة، تجمع الجيران والكل يتكاتف وقت الشدة." },
+          { keywords: ["تعليم", "مطوع", "دراسة", "قرآن"], response: "كنا نتعلم عند المطوع تحت ظل الأشجار، نحفظ القرآن ونحسب بأبسط الطرق." }
+        ],
+        fallback: "هذه التفاصيل قديمة على ذاكرتي يا بني، لكن يمكنك سؤالي عن الغوص، اللؤلؤ، أو الحياة في الفريج."
+      },
+      pop: {
+        name: "مايكل جاكسون (Michael Jackson)",
+        topic: "موضوع المحادثة: تاريخ موسيقى البوب والعصر الذهبي",
+        image: "Screenshot_9-9-2026_12354_www.bing.com.jpeg",
+        welcome: "Welcome! أهلاً بك في العصر الذهبي لموسيقى البوب. اسألني عن Thriller، رقصة Moonwalk، أو ألبومات الثمانينات.",
+        kb: [
+          { keywords: ["رغص", "رقص", "مونواك", "moonwalk", "خطوة"], response: "رقصة الـ Moonwalk كانت لحظة استثنائية ظهرت لأول مرة عام 1983 في احتفالية Motown 25!" },
+          { keywords: ["ثريلر", "thriller", "ألبوم", "اغنيه", "أغنية"], response: "ألبوم Thriller غير تاريخ الموسيقى وصنع ثورة في عالم الفيديو كليب عام 1982." },
+          { keywords: ["موسيقى", "بوب", "غناء", "حفلة", "مسرح"], response: "الموسيقى هي لغة تجمع كل الشعوب، وكنا نسعى دائماً لتقديم أفضل استعراض على المسرح." }
+        ],
+        fallback: "يمكنك سؤالي عن أغاني الثمانينات، استعراضات المسرح، أو كواليس ألبوم Thriller!"
+      },
+      football: {
+        name: "أسطورة الكرة القديمة",
+        topic: "موضوع المحادثة: الذكريات الكروية وكأس العالم الكلاسيكي",
+        image: "Screenshot_9-9-2026_123131_www.bing.com.jpeg",
+        welcome: "حياك الله يا كابتن! جاهز للحديث عن تاريخ كرة القدم والأيام الذهبية للجلد المدور؟",
+        kb: [
+          { keywords: ["كأس العالم", "مونديال", "بطولة", "ذهب"], response: "بطولات كأس العالم القديمة كانت تلعب بشغف حقيقي وكرة جلدية ثقيلة ممتعة." },
+          { keywords: ["هداف", "هدف", "تسديد", "ملعب"], response: "الأهداف القديمة كانت تعتمد على المهارة الفردية والتسديدات القوية من خارج المنطقة." },
+          { keywords: ["لاعب", "أسطورة", "بيليه", "مارادونا", "فريق"], response: "جيل الأساطير القدامى صنع مجد اللعبة قبل دخول الحسابات التجارية والتكتيكات المعقدة." }
+        ],
+        fallback: "اسألني عن المباريات التاريخية، مباريات كأس العالم القديمة، أو أساطير كرة القدم."
+      },
+      architecture: {
+        name: "المهندس المعماري",
+        topic: "موضوع المحادثة: تاريخ التخطيط العمراني والمجسمات المعمارية",
+        image: "Screenshot_9-9-2026_12363_www.bing.com.jpeg",
+        welcome: "أهلاً بك. العمارة هي السجل الحي لتاريخ الشعوب. اسألني عن التخطيط المعماري والمخططات القديمة.",
+        kb: [
+          { keywords: ["مخطط", "مجسم", "رسم", "تصميم", "هندسة"], response: "قبل البرامج الحديثة، كنا نرسم المخططات باليد بدقة عالية ونبني مجسمات مصغرة من الكرتون والخشب." },
+          { keywords: ["مبنى", "عمارة", "تخطيط", "مدن", "بناء"], response: "التخطيط العمراني القديم كان يراعي الطبيعة وحركة الشمس والرياح لتوفير بيئة مريحة." },
+          { keywords: ["تاريخ", "مواد", "حجر", "حديد"], response: "تطور مواد البناء عبر العقود هو ما سمح لنا بالانتقال من المباني التقليدية إلى المنشآت الحديثة." }
+        ],
+        fallback: "يمكنك الاستفسار عن طرق تصميم المجسمات، الرسم الهندسي اليدوي، أو تاريخ العمارة."
+      }
+    };
+
+    let currentSimKey = "diving";
+
+    window.onload = () => {
+      // عرض اسم المستخدم القادم من صفحة الدخول
+      let user = '';
+      try { user = sessionStorage.getItem('fv_user') || ''; } catch (e) {}
+      document.getElementById('welcomeUser').innerText = user ? 'مرحباً ' + user : 'مرحباً بك';
+
+      selectSimulator('diving');
+    };
+
+    // تسجيل الخروج: مسح جلسة التحقق والعودة لصفحة الدخول
+    function logoutVault() {
+      try {
+        sessionStorage.removeItem('fv_verified');
+        sessionStorage.removeItem('fv_user');
+      } catch (e) {}
+      location.replace('index.html');
+    }
+
+    function selectSimulator(key) {
+      currentSimKey = key;
+      const sim = simulators[key];
+
+      document.getElementById('activeName').innerText = sim.name;
+      document.getElementById('activeTopic').innerText = sim.topic;
+      document.getElementById('activeImg').src = sim.image;
+
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML = `<p><strong>${sim.name}:</strong> ${sim.welcome}</p>`;
+    }
+
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ة/g, "ه")
+        .replace(/[ً-ْ]/g, "")
+        .replace(/^ال/, "");
+    }
+
+    function sendMessage() {
+      const inputEl = document.getElementById('userInput');
+      const rawInput = inputEl.value.trim();
+      const chatBox = document.getElementById('chatBox');
+
+      if (!rawInput) return;
+
+      chatBox.innerHTML += `<p><strong>أنت:</strong> ${rawInput}</p>`;
+
+      const cleanInput = normalizeText(rawInput);
+      const activeSim = simulators[currentSimKey];
+      let foundResponse = null;
+
+      for (const item of activeSim.kb) {
+        const matched = item.keywords.some(kw => {
+          const cleanKw = normalizeText(kw);
+          return cleanInput.includes(cleanKw) || rawInput.toLowerCase().includes(kw);
+        });
+
+        if (matched) {
+          foundResponse = item.response;
+          break;
+        }
+      }
+
+      if (!foundResponse) {
+        foundResponse = activeSim.fallback;
+      }
+
+      setTimeout(() => {
+        chatBox.innerHTML += `<p><strong>${activeSim.name}:</strong> ${foundResponse}</p>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 400);
+
+      inputEl.value = '';
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+  </script>
+</body>
+</html>

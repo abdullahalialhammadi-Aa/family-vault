@@ -232,6 +232,7 @@
     <!-- 3. نجاح التحقق -->
     <div id="done-step" style="display: none;">
       <canvas id="snapshot" class="snapshot"></canvas>
+      <button class="btn-main" id="continue-btn" onclick="enterVault()">متابعة إلى الذاكرة الرقمية ←</button>
       <button class="btn-main btn-secondary" onclick="logout()">تسجيل الخروج</button>
     </div>
 
@@ -260,6 +261,9 @@
 
     // مفتاح حفظ الحسابات الجديدة في متصفح الجهاز
     const ACCOUNTS_KEY = "fv_accounts";
+
+    // الصفحة الداخلية التي يُنقل إليها المستخدم بعد نجاح التحقق
+    const VAULT_PAGE = "vault.html";
     // ============================================================
 
     let model = null;
@@ -555,13 +559,32 @@
 
     function finishVerification(label, confidence) {
       stopCamera();
+      markVerified();
       document.getElementById('scan-step').style.display = 'none';
       document.getElementById('done-step').style.display = 'block';
-      setStatus('تم التحقق بنجاح ✅ العنصر: ' + label + ' (' + confidence + '%) - مرحباً ' + currentUser, 'green');
+      setStatus('تم التحقق بنجاح ✅ العنصر: ' + label + ' (' + confidence + '%) - مرحباً ' + currentUser + '، اضغط متابعة للدخول', 'green');
+    }
+
+    // حفظ حالة التحقق لهذه الجلسة حتى تسمح صفحة vault.html بالدخول
+    function markVerified() {
+      try {
+        sessionStorage.setItem('fv_verified', '1');
+        sessionStorage.setItem('fv_user', currentUser);
+      } catch (e) {}
+    }
+
+    // ---------- 4) الدخول إلى الصفحة الداخلية ----------
+    function enterVault() {
+      markVerified();
+      location.href = VAULT_PAGE;
     }
 
     function logout() {
       stopCamera();
+      try {
+        sessionStorage.removeItem('fv_verified');
+        sessionStorage.removeItem('fv_user');
+      } catch (e) {}
       location.reload();
     }
 
