@@ -94,8 +94,20 @@ try {
       s.onerror = () => rej(new Error('تعذّر تحميل مكتبة التعرّف محلياً'));
       document.head.appendChild(s);
     });
-    return { already: false, loaded: typeof faceapi !== 'undefined' };`);
+
+    // نثبّت محرّك الحساب على المعالج. خوادم التكامل المستمر بلا كرت رسوم،
+    // فتختار المكتبة تنفيذ webgl برمجياً وهو أبطأ بمئات المرّات ويتجاوز المهلة.
+    // المستخدم الحقيقي يبقى على الاختيار التلقائي في الصفحة نفسها.
+    let forced = null;
+    try {
+      await faceapi.tf.setBackend('cpu');
+      await faceapi.tf.ready();
+      forced = faceapi.tf.getBackend();
+    } catch (e) { forced = 'تعذّر: ' + e.message; }
+
+    return { already: false, loaded: typeof faceapi !== 'undefined', backend: forced };`);
   t.check('تحضير مكتبة التعرّف محلياً', r.already || r.loaded, true);
+  t.check('تثبيت محرّك الحساب على المعالج', r.backend, 'cpu');
 
   /* ---------- 1) تحميل الصفحة ---------- */
   r = await B.evaluate(`
@@ -311,10 +323,12 @@ try {
   r = await B.evaluate(`
     const c = document.createElement('canvas'); c.width = 320; c.height = 240;
     const x = c.getContext('2d'); x.fillStyle = '#6b4a2b'; x.fillRect(0, 0, 320, 240);
+    const t0 = performance.now();
     await processFace(c);
-    return { status: ${status()}, step: currentStep };`);
+    return { status: ${status()}, step: currentStep, ms: Math.round(performance.now() - t0) };`);
   t.check('رفض لقطة بلا وجه', /لم نتعرّف على وجه واضح/.test(r.status), true);
   t.check('البقاء في خطوة الوجه', r.step, 'face');
+  t.note('زمن فحص لقطة بلا وجه (كل أحجام الإدخال): ' + r.ms + 'ms');
 
   r = await B.evaluate(`
     factorResults.face = null;
