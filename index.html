@@ -2,25 +2,35 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الذاكرة الرقمية للأجيال - التحقق الحَي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>الذاكرة الرقمية للأجيال - بوابة تحقّق ثلاثية</title>
   <style>
     :root {
       --primary-color: #8C2B2B;
+      --primary-dark: #6E2020;
       --accent-color: #C5A059;
       --bg-color: #FAF6F0;
       --card-bg: #FFFFFF;
       --text-color: #333333;
+      --ok: #2E7D32;
+      --warn: #D97706;
+      --err: #C62828;
     }
+
+    * { box-sizing: border-box; }
+
+    /* نضمن أن خاصية الإخفاء تتغلّب على أي display في الأصناف */
+    [hidden] { display: none !important; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 0;
+      padding: 16px;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
       direction: rtl;
     }
@@ -29,31 +39,161 @@
       background: var(--card-bg);
       border: 1px solid #E5DDCB;
       border-radius: 16px;
-      padding: 30px;
+      padding: 24px 22px 18px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       box-shadow: 0 10px 25px rgba(140, 43, 43, 0.08);
       text-align: center;
     }
 
     .logo-title {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: bold;
       color: var(--primary-color);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .subtitle {
       font-size: 13px;
       color: #777;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
-    /* تبويبات تسجيل الدخول / إنشاء حساب */
+    /* ===== مؤشّر الخطوات ===== */
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin: 0 0 18px;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 13px;
+      right: 12%;
+      left: 12%;
+      height: 2px;
+      background: #E5DDCB;
+      z-index: 0;
+    }
+
+    .step-dot {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      font-size: 10px;
+      color: #999;
+      line-height: 1.3;
+    }
+
+    .step-dot i {
+      display: block;
+      width: 26px;
+      height: 26px;
+      margin: 0 auto 5px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #E5DDCB;
+      color: #bbb;
+      font-style: normal;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 22px;
+    }
+
+    .step-dot.active i {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(140, 43, 43, 0.12);
+    }
+
+    .step-dot.active { color: var(--primary-color); font-weight: bold; }
+
+    .step-dot.done i {
+      background: var(--ok);
+      border-color: var(--ok);
+      color: #fff;
+    }
+
+    .step-dot.done { color: var(--ok); }
+
+    /* ===== عناصر عامة ===== */
+    .step-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin: 0 0 6px;
+    }
+
+    .hint {
+      font-size: 13.5px;
+      color: #555;
+      line-height: 1.6;
+      margin: 0 0 12px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0 14px;
+      border: 1px solid #D1C7BD;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      text-align: center;
+    }
+
+    .code-input {
+      letter-spacing: 8px;
+      font-size: 22px;
+      font-weight: bold;
+      direction: ltr;
+    }
+
+    .btn-main {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: #FFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 15.5px;
+      font-weight: bold;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: center;
+    }
+
+    .btn-main:hover { background-color: var(--primary-dark); }
+    .btn-main:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-secondary {
+      background-color: #FFF;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover { background-color: #F7EFEF; }
+
+    .btn-danger {
+      background-color: #FFF;
+      color: var(--err);
+      border: 1px solid var(--err);
+      margin-top: 10px;
+    }
+
+    .btn-danger:hover { background-color: #FDEDED; }
+
+    /* تبويبات الدخول / إنشاء حساب */
     .tab-group {
       display: flex;
       border-bottom: 1px solid #E5DDCB;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
     }
 
     .tab-btn {
@@ -64,9 +204,9 @@
       padding: 10px;
       font-size: 14px;
       font-weight: bold;
+      font-family: inherit;
       color: #888;
       cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
     }
 
     .tab-btn.active {
@@ -74,72 +214,65 @@
       border-bottom-color: var(--primary-color);
     }
 
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0 16px;
-      border: 1px solid #D1C7BD;
-      border-radius: 8px;
-      box-sizing: border-box;
-      font-size: 14px;
+    /* صناديق معلومات */
+    .box {
+      border: 1px solid #E5DDCB;
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #FCFAF6;
+      text-align: right;
+      font-size: 13px;
+      line-height: 1.75;
+      margin-bottom: 12px;
     }
 
-    .btn-main {
+    .box.warn { background: #FFF8E8; border-color: #F0D9A0; color: #7A5A10; }
+    .box.err { background: #FDEDED; border-color: #F2C4C4; color: #8C2B2B; }
+
+    .box ul { margin: 6px 0 0; padding-right: 18px; }
+    .box li { margin-bottom: 4px; }
+
+    .secret-code {
       display: block;
-      width: 100%;
-      padding: 12px;
-      box-sizing: border-box;
-      background-color: var(--primary-color);
-      color: #FFF;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-      text-align: center;
-    }
-
-    .btn-main:hover {
-      background-color: #6E2020;
-    }
-
-    .btn-main:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    /* زر ثانوي (إطار فقط) */
-    .btn-secondary {
-      background-color: #FFF;
-      color: var(--primary-color);
-      border: 1px solid var(--primary-color);
-      margin-top: 10px;
-    }
-
-    .btn-secondary:hover {
-      background-color: #F7EFEF;
-    }
-
-    .hint {
+      direction: ltr;
+      font-family: 'Courier New', monospace;
       font-size: 14px;
-      color: #555;
-      margin-bottom: 10px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      background: #fff;
+      border: 1px dashed var(--accent-color);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      word-break: break-all;
+      user-select: all;
     }
 
-    /* حاوية الفيديو والكاميرا المباشرة */
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      margin: 12px 0;
+    }
+
+    #qrcode img, #qrcode canvas {
+      border: 8px solid #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    /* الكاميرا */
     .webcam-container {
       position: relative;
       width: 100%;
-      height: 260px;
+      height: 250px;
       background: #000;
       border-radius: 12px;
       overflow: hidden;
-      margin: 15px 0;
+      margin: 12px 0;
       border: 2px solid var(--accent-color);
     }
 
-    video {
+    .webcam-container video {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -150,59 +283,207 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 180px;
-      height: 180px;
+      width: 170px;
+      height: 170px;
       border: 2px dashed rgba(255, 255, 255, 0.7);
       border-radius: 10px;
       pointer-events: none;
     }
 
-    /* الصورة الملتقطة بعد نجاح التحقق */
+    .scan-overlay.oval { border-radius: 50%; width: 150px; height: 190px; }
+
     .snapshot {
       display: block;
       width: 100%;
-      max-height: 260px;
+      max-height: 250px;
       object-fit: cover;
       border-radius: 12px;
       border: 2px solid var(--accent-color);
-      margin: 15px 0;
+      margin: 12px 0;
       background: #000;
     }
 
+    /* الموافقة */
+    .consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: right;
+      font-size: 13.5px;
+      line-height: 1.6;
+      margin: 4px 0 14px;
+      cursor: pointer;
+    }
+
+    .consent-row input {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+      margin-top: 2px;
+      accent-color: var(--primary-color);
+    }
+
     #status-msg {
-      margin-top: 15px;
-      font-size: 14px;
+      margin-top: 14px;
+      font-size: 13.5px;
       font-weight: bold;
+      line-height: 1.6;
       min-height: 20px;
     }
+
+    /* شريط الأدوات السفلي */
+    .tools {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #EFE7DA;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .tools button {
+      background: none;
+      border: none;
+      color: #8a7a6a;
+      font-family: inherit;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 2px;
+    }
+
+    .tools button:hover { color: var(--primary-color); }
+
+    /* النوافذ المنبثقة */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 25, 20, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal[hidden] { display: none; }
+
+    .modal-card {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      text-align: right;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #EFE7DA;
+    }
+
+    .modal-head h3 { margin: 0; font-size: 15px; color: var(--primary-color); }
+
+    .modal-head button {
+      background: none;
+      border: none;
+      font-size: 22px;
+      line-height: 1;
+      color: #999;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 14px 16px 18px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* السجل */
+    .log-item {
+      border-right: 3px solid #ddd;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      background: #FBF9F5;
+      border-radius: 6px;
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+
+    .log-item.ok { border-right-color: var(--ok); }
+    .log-item.fail { border-right-color: var(--err); }
+
+    .log-item .meta { color: #888; font-size: 11.5px; direction: ltr; text-align: left; }
+    .log-item .who { font-weight: bold; color: var(--primary-color); }
+
+    .empty { color: #999; text-align: center; padding: 18px 0; }
+
+    .acct-block {
+      border: 1px solid #EFE7DA;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #FCFAF6;
+    }
+
+    .acct-block h4 { margin: 0 0 8px; color: var(--primary-color); font-size: 14px; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+    .chip {
+      font-size: 11.5px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: #EFE7DA;
+      color: #6b5a45;
+    }
+
+    .chip.on { background: #E3F1E4; color: var(--ok); }
   </style>
 
-  <!-- TensorFlow & Teachable Machine CDN -->
+  <!-- TensorFlow & Teachable Machine (نموذج Coffee / Mouse) -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
+  <!-- مولّد رمز QR لتطبيق المصادقة -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
   <div class="vault-card">
     <div class="logo-title">الذاكرة الرقمية للأجيال</div>
-    <div class="subtitle">Family Vault - نظام التحقق الحي</div>
+    <div class="subtitle">Family Vault - بوابة تحقّق ثلاثية</div>
 
-    <!-- 1. خطوة تسجيل الدخول / إنشاء حساب -->
-    <div id="auth-step">
+    <!-- مؤشّر الخطوات -->
+    <div class="steps" id="steps"></div>
+
+    <!-- تحذير يظهر فقط إذا لم يكن الاتصال آمناً -->
+    <div class="box err" id="insecure-banner" hidden>
+      <b>الاتصال غير آمن (HTTPS غير مفعّل).</b>
+      بصمة الجهاز والكاميرا لا تعملان بدون HTTPS. افتح الموقع عبر رابط يبدأ بـ https.
+    </div>
+
+    <!-- ============ 1) الحساب ============ -->
+    <div class="step" id="step-auth">
       <div class="tab-group">
         <button class="tab-btn active" id="tab-login" onclick="switchAuthMode('login')">تسجيل الدخول</button>
         <button class="tab-btn" id="tab-register" onclick="switchAuthMode('register')">إنشاء حساب</button>
       </div>
 
-      <!-- نموذج تسجيل الدخول -->
       <div id="login-form">
         <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="username">
         <input type="password" id="password" class="input-field" placeholder="كلمة المرور" autocomplete="current-password">
         <button class="btn-main" id="login-btn" onclick="login()">دخول</button>
       </div>
 
-      <!-- نموذج إنشاء حساب جديد -->
-      <div id="register-form" style="display: none;">
+      <div id="register-form" hidden>
         <input type="text" id="reg-username" class="input-field" placeholder="اسم المستخدم الجديد" autocomplete="username">
         <input type="password" id="reg-password" class="input-field" placeholder="كلمة المرور (4 أحرف على الأقل)" autocomplete="new-password">
         <input type="password" id="reg-confirm" class="input-field" placeholder="تأكيد كلمة المرور" autocomplete="new-password">
@@ -210,9 +491,102 @@
       </div>
     </div>
 
-    <!-- 2. خطوة التحقق الحي بالكاميرا (Coffee / Mouse) -->
-    <div id="scan-step" style="display: none;">
-      <p class="hint">وجّه الكاميرا نحو <b>Coffee</b> أو <b>Mouse</b> ثم اضغط زر التحقق:</p>
+    <!-- ============ 2) رمز TOTP ============ -->
+    <div class="step" id="step-totp" hidden>
+      <p class="step-title">العامل الأول: رمز التحقق المؤقّت (TOTP)</p>
+
+      <!-- تهيئة أول مرة -->
+      <div id="totp-setup" hidden>
+        <p class="hint">امسح الرمز بتطبيق <b>Google Authenticator</b> أو <b>Microsoft Authenticator</b>، ثم أدخل الرمز الظاهر لتأكيد الربط.</p>
+        <div id="qrcode"></div>
+        <p class="hint" style="margin-bottom:4px;">أو أدخل المفتاح يدوياً في التطبيق:</p>
+        <code class="secret-code" id="totp-secret-text"></code>
+        <input type="text" id="totp-setup-code" class="input-field code-input" placeholder="000000" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+        <button class="btn-main" id="totp-setup-btn" onclick="totp_setup_confirm()">تأكيد وتفعيل</button>
+      </div>
+
+      <!-- تحقق في كل دخول -->
+      <div id="totp-verify" hidden>
+        <p class="hint">افتح تطبيق المصادقة وأدخل الرمز المكوّن من 6 أرقام الخاص بحسابك.</p>
+        <input type="text" id="totp-code" class="input-field code-input" placeholder="000000" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+        <button class="btn-main" id="totp-verify-btn" onclick="totp_verify()">تحقّق من الرمز</button>
+      </div>
+    </div>
+
+    <!-- ============ 3) بصمة الجهاز (WebAuthn) ============ -->
+    <div class="step" id="step-webauthn" hidden>
+      <p class="step-title">العامل الثاني: بصمة الجهاز (WebAuthn)</p>
+
+      <div id="wa-register" hidden>
+        <p class="hint">
+          سجّل بصمتك على هذا الجهاز مرة واحدة. تُحفظ البصمة داخل الجهاز نفسه
+          (Touch ID / Face ID / Windows Hello / بصمة الأندرويد) ولا تصل إلى الموقع إطلاقاً.
+        </p>
+        <button class="btn-main" id="wa-register-btn" onclick="webauthn_register()">تسجيل بصمة هذا الجهاز</button>
+      </div>
+
+      <div id="wa-verify" hidden>
+        <p class="hint">
+          ضع إصبعك على المستشعر أو استخدم تعرّف الوجه في جهازك.
+          سيُقارن الجهاز بصمتك بالبصمة المخزّنة داخله، ثم نتحقق أن المفتاح العائد هو نفسه المفتاح المسجّل لحسابك.
+        </p>
+        <button class="btn-main" id="wa-verify-btn" onclick="webauthn_verify()">تحقّق ببصمة الجهاز</button>
+        <button class="btn-main btn-secondary" onclick="webauthn_reregister()">تسجيل بصمة جديدة لهذا الجهاز</button>
+      </div>
+
+      <div id="wa-unsupported" hidden>
+        <div class="box warn">
+          <b>هذا الجهاز لا يدعم بصمة WebAuthn.</b>
+          <span id="wa-unsupported-reason"></span>
+        </div>
+        <button class="btn-main btn-secondary" onclick="skipFactor('webauthn')">متابعة بدون هذا العامل</button>
+      </div>
+    </div>
+
+    <!-- ============ 4-أ) شاشة الموافقة الصريحة ============ -->
+    <div class="step" id="step-consent" hidden>
+      <p class="step-title">موافقة صريحة قبل تشغيل الكاميرا</p>
+      <div class="box">
+        قبل أن نفتح الكاميرا، اقرأ ما يلي:
+        <ul>
+          <li>تعمل الكاميرا <b>داخل جهازك فقط</b>، ولا يُرفع أي شيء إلى أي خادم.</li>
+          <li>نحوّل صورة وجهك إلى <b>واصف رقمي (128 رقماً)</b> ولا نحفظ الصورة إطلاقاً.</li>
+          <li>يُخزَّن الواصف في متصفح هذا الجهاز وحده، ولا يمكن إعادة بناء صورتك منه.</li>
+          <li>تستطيع <b>حذف الواصف نهائياً</b> في أي وقت من زر الخصوصية بالأسفل.</li>
+          <li>يُسجَّل كل محاولة تحقق (نجاح أو فشل) في سجل محلي تستطيع الاطلاع عليه.</li>
+        </ul>
+      </div>
+      <label class="consent-row">
+        <input type="checkbox" id="consent-check" onchange="onConsentToggle()">
+        <span>أوافق صراحةً على تشغيل الكاميرا ومعالجة صورتي محلياً على هذا الجهاز.</span>
+      </label>
+      <button class="btn-main" id="consent-btn" onclick="giveConsent()" disabled>أوافق ومتابعة</button>
+      <button class="btn-main btn-danger" onclick="refuseConsent()">أرفض</button>
+    </div>
+
+    <!-- ============ 4-ب) بوابة الوجه ============ -->
+    <div class="step" id="step-face" hidden>
+      <p class="step-title">العامل الثالث: بوابة الوجه</p>
+      <p class="hint" id="face-hint">ضع وجهك داخل الإطار في إضاءة جيدة.</p>
+
+      <div class="webcam-container">
+        <video id="face-webcam" autoplay playsinline muted></video>
+        <div class="scan-overlay oval"></div>
+      </div>
+
+      <button class="btn-main" id="face-btn" onclick="faceCapture()" disabled>جاري التحضير...</button>
+
+      <div id="face-fallback" hidden>
+        <label class="btn-main btn-secondary" for="face-photo-input">التقاط صورة بكاميرا الجهاز 📸</label>
+        <input type="file" id="face-photo-input" accept="image/*" capture="user" hidden onchange="onFacePhoto(this)">
+        <button class="btn-main btn-secondary" onclick="startFaceCamera()">إعادة محاولة تشغيل الكاميرا</button>
+      </div>
+    </div>
+
+    <!-- ============ 5) العنصر الحي Coffee / Mouse ============ -->
+    <div class="step" id="step-scan" hidden>
+      <p class="step-title">التحقق الحي من العنصر</p>
+      <p class="hint">وجّه الكاميرا نحو <b>Coffee</b> أو <b>Mouse</b> ثم اضغط زر التحقق.</p>
 
       <div class="webcam-container">
         <video id="webcam" autoplay playsinline muted></video>
@@ -221,390 +595,1377 @@
 
       <button class="btn-main" id="capture-btn" onclick="captureAndVerify()" disabled>التقاط والتحقق 📷</button>
 
-      <!-- بديل يظهر فقط إذا تعذر تشغيل الكاميرا المباشرة (مثل بعض تطبيقات الهاتف) -->
-      <div id="fallback-box" style="display: none;">
+      <div id="fallback-box" hidden>
         <label class="btn-main btn-secondary" for="photo-input">التقاط صورة بكاميرا الجهاز 📸</label>
-        <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;" onchange="onFallbackPhoto(this)">
+        <input type="file" id="photo-input" accept="image/*" capture="environment" hidden onchange="onFallbackPhoto(this)">
         <button class="btn-main btn-secondary" onclick="startCamera()">إعادة محاولة تشغيل الكاميرا المباشرة</button>
       </div>
     </div>
 
-    <!-- 3. نجاح التحقق -->
-    <div id="done-step" style="display: none;">
+    <!-- ============ 6) نجاح ============ -->
+    <div class="step" id="step-done" hidden>
       <canvas id="snapshot" class="snapshot"></canvas>
+      <div class="box" id="factors-summary"></div>
       <button class="btn-main" id="continue-btn" onclick="enterVault()">متابعة إلى الذاكرة الرقمية ←</button>
       <button class="btn-main btn-secondary" onclick="logout()">تسجيل الخروج</button>
     </div>
 
     <div id="status-msg"></div>
+
+    <div class="tools">
+      <button onclick="openLog()">📋 سجل المحاولات</button>
+      <button onclick="openPrivacy()">🔒 الخصوصية وحذف الواصف</button>
+    </div>
+  </div>
+
+  <!-- نافذة السجل -->
+  <div class="modal" id="log-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>📋 سجل آخر المحاولات</h3>
+        <button onclick="closeModal('log-modal')" aria-label="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="log-list"></div>
+        <button class="btn-main btn-danger" onclick="clearLog()">مسح السجل</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة الخصوصية والحذف -->
+  <div class="modal" id="privacy-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>🔒 الخصوصية وحذف البيانات</h3>
+        <button onclick="closeModal('privacy-modal')" aria-label="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="box">
+          كل بيانات التحقق محفوظة في متصفح هذا الجهاز فقط:
+          <ul>
+            <li><b>واصف الوجه:</b> 128 رقماً مشتقة من صورتك. الصورة نفسها لا تُحفظ أبداً.</li>
+            <li><b>بصمة الجهاز:</b> نحفظ معرّف المفتاح فقط. البصمة تبقى داخل الجهاز ولا نراها.</li>
+            <li><b>مفتاح TOTP:</b> يُستخدم لتوليد الرموز المؤقتة في تطبيق المصادقة.</li>
+          </ul>
+          الحذف من هنا نهائي ولا يمكن التراجع عنه.
+        </div>
+        <div id="privacy-list"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // ============================================================
-    //  الإعدادات: عدّل من هنا فقط
-    // ============================================================
-    // حسابات ثابتة جاهزة بالصيغة  "اسم المستخدم": "كلمة المرور"
-    // (الحسابات الجديدة من تبويب "إنشاء حساب" تُحفظ في متصفح الجهاز نفسه)
-    const USERS = {
-      "admin": "1234"
-      // "user2": "5678"
-    };
+  /* ================================================================
+     الإعدادات: عدّل من هنا فقط
+     ================================================================ */
 
-    // الفئات المقبولة من نموذج Teachable Machine (كما هي في metadata.json)
-    const ALLOWED_LABELS = ["COFFEE", "MOUSE"];
+  // حسابات ثابتة جاهزة بالصيغة  "اسم المستخدم": "كلمة المرور"
+  const USERS = {
+    "admin": "1234"
+  };
 
-    // أقل نسبة ثقة مقبولة (0.65 = 65%)
-    const MIN_CONFIDENCE = 0.65;
+  // الفئات المقبولة من نموذج Teachable Machine (كما في metadata.json)
+  const ALLOWED_LABELS = ["COFFEE", "MOUSE"];
+  const MIN_CONFIDENCE = 0.65;          // أقل نسبة ثقة مقبولة للعنصر الحي
+  const MODEL_URL = "./";               // مكان model.json و metadata.json و weights.bin
+  const VAULT_PAGE = "vault.html";      // الصفحة الداخلية بعد نجاح التحقق
 
-    // مكان ملفات النموذج model.json و metadata.json و weights.bin
-    const MODEL_URL = "./";
+  // بوابة الوجه
+  const FACE_API_SRC = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
+  const FACE_MODEL_URL = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
+  const FACE_MATCH_THRESHOLD = 0.55;    // أقل مسافة إقليدية تعني "نفس الشخص" (كلما قلّت كانت أشد)
+  const FACE_SCORE_THRESHOLD = 0.4;     // أقل درجة ثقة لقبول أن ما في اللقطة وجه
+  // الكاشف حساس لنسبة حجم الوجه إلى حجم الإدخال: الوجه القريب يحتاج حجماً صغيراً
+  // والوجه البعيد يحتاج حجماً كبيراً، لذلك نجرّبها بالترتيب حتى ينجح أحدها
+  const FACE_INPUT_SIZES = [320, 416, 224, 160, 608];
 
-    // مفتاح حفظ الحسابات الجديدة في متصفح الجهاز
-    const ACCOUNTS_KEY = "fv_accounts";
+  // رمز TOTP
+  const TOTP_ISSUER = "Family Vault";
+  const TOTP_PERIOD = 30;               // ثواني صلاحية الرمز
+  const TOTP_DIGITS = 6;
+  const TOTP_WINDOW = 1;                // تسامح ±30 ثانية مع فرق ساعة الجهاز
 
-    // الصفحة الداخلية التي يُنقل إليها المستخدم بعد نجاح التحقق
-    const VAULT_PAGE = "vault.html";
-    // ============================================================
+  // مفاتيح التخزين المحلي
+  const ACCOUNTS_KEY = "fv_accounts";
+  const SECURITY_KEY = "fv_security";
+  const LOG_KEY = "fv_log";
+  const LOG_MAX = 50;
 
-    let model = null;
-    let modelPromise = null;
-    let videoStream = null;
-    let currentUser = "";
+  /* ================================================================
+     حالة الجلسة
+     ================================================================ */
+  const STEPS = [
+    { key: "auth",     label: "الحساب" },
+    { key: "totp",     label: "رمز TOTP" },
+    { key: "webauthn", label: "بصمة الجهاز" },
+    { key: "face",     label: "بوابة الوجه" },
+    { key: "scan",     label: "العنصر الحي" }
+  ];
 
-    // ---------- تحميل نموذج Coffee / Mouse ----------
-    function loadModel() {
-      if (model) return Promise.resolve(model);
-      if (!modelPromise) {
-        modelPromise = (async () => {
-          if (typeof tmImage === 'undefined') {
-            throw new Error('مكتبة التعرف لم تُحمَّل');
-          }
-          model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-          return model;
-        })().catch(err => {
-          modelPromise = null; // نسمح بإعادة المحاولة لاحقاً
-          throw err;
-        });
+  let currentUser = "";
+  let currentStep = "auth";
+  let doneSteps = [];
+  let factorResults = {};   // ملخّص يظهر في نهاية العملية
+  let videoStream = null;
+  let model = null, modelPromise = null;
+  let faceApiPromise = null;
+
+  /* ================================================================
+     أدوات التخزين
+     ================================================================ */
+  function readStore(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+  }
+
+  function writeStore(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+  }
+
+  function loadAccounts() { return readStore(ACCOUNTS_KEY); }
+  function saveAccounts(a) { return writeStore(ACCOUNTS_KEY, a); }
+
+  function allSecurity() { return readStore(SECURITY_KEY); }
+
+  function getSecurity(user) {
+    const all = allSecurity();
+    return all[user] || {};
+  }
+
+  function setSecurity(user, patch) {
+    const all = allSecurity();
+    all[user] = Object.assign({}, all[user] || {}, patch);
+    return writeStore(SECURITY_KEY, all);
+  }
+
+  function clearSecurityField(user, field) {
+    const all = allSecurity();
+    if (all[user]) {
+      delete all[user][field];
+      if (Object.keys(all[user]).length === 0) delete all[user];
+      writeStore(SECURITY_KEY, all);
+    }
+  }
+
+  function dropSecurity(user) {
+    const all = allSecurity();
+    delete all[user];
+    writeStore(SECURITY_KEY, all);
+  }
+
+  // سجل المحاولات
+  function readLog() {
+    try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; } catch (e) { return []; }
+  }
+
+  function addLog(step, ok, msg) {
+    const list = readLog();
+    list.unshift({
+      t: new Date().toISOString(),
+      user: currentUser || "—",
+      step: step,
+      ok: !!ok,
+      msg: msg || ""
+    });
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(list.slice(0, LOG_MAX))); } catch (e) {}
+  }
+
+  /* ================================================================
+     أدوات التشفير: كلمة المرور، Base32، HOTP/TOTP
+     ================================================================ */
+  async function sha256Hex(text) {
+    const data = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function hashPassword(password) {
+    if (window.crypto && crypto.subtle) return "sha256:" + await sha256Hex(password);
+    return "plain:" + password;
+  }
+
+  async function passwordMatches(stored, password) {
+    if (!stored) return false;
+    if (stored.indexOf("plain:") === 0) return stored === "plain:" + password;
+    return stored === await hashPassword(password);
+  }
+
+  const B32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+  function base32Encode(bytes) {
+    let bits = 0, value = 0, out = "";
+    for (let i = 0; i < bytes.length; i++) {
+      value = ((value << 8) | bytes[i]) & 0xffff;
+      bits += 8;
+      while (bits >= 5) {
+        out += B32_ALPHABET[(value >>> (bits - 5)) & 31];
+        bits -= 5;
+        value &= (1 << bits) - 1;
       }
-      return modelPromise;
     }
+    if (bits > 0) out += B32_ALPHABET[(value << (5 - bits)) & 31];
+    return out;
+  }
 
-    // نبدأ تحميل النموذج مبكراً أثناء كتابة بيانات الدخول
-    loadModel().catch(err => console.warn('تعذر تحميل النموذج مبكراً:', err));
-
-    // ---------- الحسابات المحفوظة في الجهاز ----------
-    function loadAccounts() {
-      try {
-        return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || {};
-      } catch (e) {
-        return {};
+  function base32Decode(str) {
+    const clean = String(str).toUpperCase().replace(/=+$/, "").replace(/\s+/g, "");
+    let bits = 0, value = 0;
+    const out = [];
+    for (let i = 0; i < clean.length; i++) {
+      const idx = B32_ALPHABET.indexOf(clean[i]);
+      if (idx === -1) throw new Error("مفتاح غير صالح");
+      value = ((value << 5) | idx) & 0xffff;
+      bits += 5;
+      if (bits >= 8) {
+        out.push((value >>> (bits - 8)) & 255);
+        bits -= 8;
+        value &= (1 << bits) - 1;
       }
     }
+    return new Uint8Array(out);
+  }
 
-    function saveAccounts(accounts) {
-      try {
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-        return true;
-      } catch (e) {
-        return false;
+  // HOTP حسب RFC 4226 باستخدام Web Crypto
+  async function hotp(keyBytes, counter, digits) {
+    const buf = new ArrayBuffer(8);
+    const dv = new DataView(buf);
+    dv.setUint32(0, Math.floor(counter / 4294967296));
+    dv.setUint32(4, counter >>> 0);
+
+    const key = await crypto.subtle.importKey(
+      "raw", keyBytes, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]
+    );
+    const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+
+    const off = sig[sig.length - 1] & 0x0f;
+    const bin = ((sig[off] & 0x7f) << 24) | ((sig[off + 1] & 0xff) << 16) |
+                ((sig[off + 2] & 0xff) << 8) | (sig[off + 3] & 0xff);
+    return String(bin % Math.pow(10, digits)).padStart(digits, "0");
+  }
+
+  // TOTP حسب RFC 6238
+  async function totpCode(secretB32, atSeconds) {
+    const counter = Math.floor((atSeconds !== undefined ? atSeconds : Date.now() / 1000) / TOTP_PERIOD);
+    return hotp(base32Decode(secretB32), counter, TOTP_DIGITS);
+  }
+
+  async function totpCheck(secretB32, code) {
+    const clean = String(code).replace(/\D/g, "");
+    if (clean.length !== TOTP_DIGITS) return false;
+    const key = base32Decode(secretB32);
+    const counter = Math.floor(Date.now() / 1000 / TOTP_PERIOD);
+    for (let w = -TOTP_WINDOW; w <= TOTP_WINDOW; w++) {
+      if (await hotp(key, counter + w, TOTP_DIGITS) === clean) return true;
+    }
+    return false;
+  }
+
+  function randomBase32Secret(bytesLen) {
+    const bytes = new Uint8Array(bytesLen || 20);
+    crypto.getRandomValues(bytes);
+    return base32Encode(bytes);
+  }
+
+  /* ================================================================
+     أدوات Base64URL لبيانات WebAuthn
+     ================================================================ */
+  function bufToB64url(buf) {
+    const bytes = new Uint8Array(buf);
+    let s = "";
+    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function b64urlToBuf(str) {
+    const pad = str.length % 4 ? "=".repeat(4 - (str.length % 4)) : "";
+    const bin = atob(str.replace(/-/g, "+").replace(/_/g, "/") + pad);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  /* ================================================================
+     التنقل بين الخطوات
+     ================================================================ */
+  function renderSteps() {
+    const wrap = document.getElementById("steps");
+    wrap.innerHTML = "";
+    STEPS.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.className = "step-dot";
+      if (doneSteps.indexOf(s.key) !== -1) div.className += " done";
+      if (s.key === currentStep || (currentStep === "consent" && s.key === "face")) {
+        div.className += " active";
       }
+      const icon = document.createElement("i");
+      icon.textContent = doneSteps.indexOf(s.key) !== -1 ? "✓" : String(i + 1);
+      const label = document.createElement("span");
+      label.textContent = s.label;
+      div.append(icon, label);
+      wrap.appendChild(div);
+    });
+  }
+
+  function showStep(key) {
+    currentStep = key;
+    ["auth", "totp", "webauthn", "consent", "face", "scan", "done"].forEach(k => {
+      document.getElementById("step-" + k).hidden = (k !== key);
+    });
+    renderSteps();
+  }
+
+  function markDone(key) {
+    if (doneSteps.indexOf(key) === -1) doneSteps.push(key);
+    renderSteps();
+  }
+
+  function setStatus(msg, color) {
+    const el = document.getElementById("status-msg");
+    el.innerText = msg || "";
+    el.style.color = color === "green" ? "var(--ok)"
+                   : color === "red" ? "var(--err)"
+                   : color === "orange" ? "var(--warn)"
+                   : "var(--text-color)";
+  }
+
+  // تخطّي عامل غير مدعوم على هذا الجهاز (يُسجَّل في السجل بوضوح)
+  function skipFactor(key) {
+    factorResults[key] = "غير مدعوم على هذا الجهاز";
+    addLog(key, false, "تم تخطّي العامل لأن الجهاز لا يدعمه");
+    setStatus("تم تخطّي هذا العامل لأن الجهاز لا يدعمه", "orange");
+    nextAfter(key);
+  }
+
+  // ترتيب الخطوات
+  function nextAfter(key) {
+    if (key === "auth") return startTotp();
+    if (key === "totp") return startWebauthn();
+    if (key === "webauthn") return startConsent();
+    if (key === "face") return startScan();
+    if (key === "scan") return showDone();
+  }
+
+  /* ================================================================
+     1) الحساب: تسجيل الدخول وإنشاء حساب
+     ================================================================ */
+  function switchAuthMode(mode) {
+    const isLogin = mode === "login";
+    document.getElementById("login-form").hidden = !isLogin;
+    document.getElementById("register-form").hidden = isLogin;
+    document.getElementById("tab-login").classList.toggle("active", isLogin);
+    document.getElementById("tab-register").classList.toggle("active", !isLogin);
+    setStatus("");
+  }
+
+  function findUserKey(obj, name) {
+    const lower = String(name).toLowerCase();
+    return Object.keys(obj).find(k => k.toLowerCase() === lower) || null;
+  }
+
+  async function register() {
+    const user = document.getElementById("reg-username").value.trim();
+    const pass = document.getElementById("reg-password").value;
+    const confirm = document.getElementById("reg-confirm").value;
+
+    if (user.length < 3) return setStatus("اسم المستخدم يجب أن يكون 3 أحرف على الأقل", "red");
+    if (pass.length < 4) return setStatus("كلمة المرور يجب أن تكون 4 أحرف على الأقل", "red");
+    if (pass !== confirm) return setStatus("كلمتا المرور غير متطابقتين", "red");
+
+    const accounts = loadAccounts();
+    if (findUserKey(USERS, user) || findUserKey(accounts, user)) {
+      return setStatus("اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر", "red");
     }
 
-    // البحث عن اسم مستخدم بدون تفريق بين الأحرف الكبيرة والصغيرة
-    function findUserKey(obj, name) {
-      const lower = name.toLowerCase();
-      return Object.keys(obj).find(k => k.toLowerCase() === lower) || null;
-    }
-
-    // تشفير كلمة المرور قبل حفظها (SHA-256) حتى لا تُحفظ كنص واضح
-    async function hashPassword(password) {
-      if (window.crypto && crypto.subtle && window.TextEncoder) {
-        const data = new TextEncoder().encode(password);
-        const digest = await crypto.subtle.digest('SHA-256', data);
-        return 'sha256:' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const btn = document.getElementById("register-btn");
+    btn.disabled = true;
+    try {
+      accounts[user] = { hash: await hashPassword(pass), createdAt: new Date().toISOString() };
+      if (!saveAccounts(accounts)) {
+        return setStatus("المتصفح لا يسمح بحفظ الحسابات على هذا الجهاز", "red");
       }
-      return 'plain:' + password;
+    } finally {
+      btn.disabled = false;
     }
 
-    async function passwordMatches(stored, password) {
-      if (!stored) return false;
-      if (stored.startsWith('plain:')) return stored === 'plain:' + password;
-      return stored === await hashPassword(password);
-    }
+    addLog("register", true, "إنشاء حساب جديد: " + user);
+    document.getElementById("reg-username").value = "";
+    document.getElementById("reg-password").value = "";
+    document.getElementById("reg-confirm").value = "";
+    switchAuthMode("login");
+    document.getElementById("username").value = user;
+    document.getElementById("password").value = "";
+    document.getElementById("password").focus();
+    setStatus("تم إنشاء الحساب بنجاح ✅ أدخل كلمة المرور لتسجيل الدخول", "green");
+  }
 
-    // ---------- 1) التبديل بين تسجيل الدخول وإنشاء حساب ----------
-    function switchAuthMode(mode) {
-      const isLogin = mode === 'login';
-      document.getElementById('login-form').style.display = isLogin ? 'block' : 'none';
-      document.getElementById('register-form').style.display = isLogin ? 'none' : 'block';
-      document.getElementById('tab-login').classList.toggle('active', isLogin);
-      document.getElementById('tab-register').classList.toggle('active', !isLogin);
-      setStatus('');
-    }
+  async function login() {
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value;
 
-    // إنشاء حساب جديد (يُحفظ في متصفح هذا الجهاز)
-    async function register() {
-      const user = document.getElementById('reg-username').value.trim();
-      const pass = document.getElementById('reg-password').value;
-      const confirm = document.getElementById('reg-confirm').value;
+    if (!user || !pass) return setStatus("يرجى إدخال اسم المستخدم وكلمة المرور", "red");
 
-      if (user.length < 3) return setStatus('اسم المستخدم يجب أن يكون 3 أحرف على الأقل', 'red');
-      if (pass.length < 4) return setStatus('كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'red');
-      if (pass !== confirm) return setStatus('كلمتا المرور غير متطابقتين', 'red');
-
+    let ok = false, displayName = user;
+    const builtinKey = findUserKey(USERS, user);
+    if (builtinKey && USERS[builtinKey] === pass) {
+      ok = true;
+      displayName = builtinKey;
+    } else {
       const accounts = loadAccounts();
-      if (findUserKey(USERS, user) || findUserKey(accounts, user)) {
-        return setStatus('اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر', 'red');
+      const key = findUserKey(accounts, user);
+      if (key) {
+        ok = await passwordMatches(accounts[key].hash, pass);
+        displayName = key;
       }
-
-      const btn = document.getElementById('register-btn');
-      btn.disabled = true;
-      try {
-        accounts[user] = { hash: await hashPassword(pass), createdAt: new Date().toISOString() };
-        if (!saveAccounts(accounts)) {
-          return setStatus('المتصفح لا يسمح بحفظ الحسابات على هذا الجهاز', 'red');
-        }
-      } finally {
-        btn.disabled = false;
-      }
-
-      // تفريغ حقول التسجيل والانتقال لتسجيل الدخول بالاسم الجديد
-      document.getElementById('reg-username').value = '';
-      document.getElementById('reg-password').value = '';
-      document.getElementById('reg-confirm').value = '';
-      switchAuthMode('login');
-      document.getElementById('username').value = user;
-      document.getElementById('password').value = '';
-      document.getElementById('password').focus();
-      setStatus('تم إنشاء الحساب بنجاح ✅ أدخل كلمة المرور لتسجيل الدخول', 'green');
     }
 
-    // تسجيل الدخول (الحسابات الثابتة + الحسابات المحفوظة في الجهاز)
-    async function login() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value;
+    currentUser = displayName;
+    if (!ok) {
+      addLog("auth", false, "كلمة مرور أو اسم مستخدم غير صحيح");
+      currentUser = "";
+      return setStatus("اسم المستخدم أو كلمة المرور غير صحيحة", "red");
+    }
 
-      if (!user || !pass) {
-        return setStatus('يرجى إدخال اسم المستخدم وكلمة المرور', 'red');
-      }
+    addLog("auth", true, "تسجيل دخول ناجح");
+    factorResults = { auth: "كلمة مرور صحيحة" };
+    doneSteps = [];
+    markDone("auth");
+    document.getElementById("password").value = "";
+    startTotp();
+  }
 
-      let ok = false;
-      let displayName = user;
+  /* ================================================================
+     2) TOTP — totp_setup / totp_verify
+     ================================================================ */
+  function startTotp() {
+    const sec = getSecurity(currentUser);
+    showStep("totp");
+    if (!crypto || !crypto.subtle) {
+      document.getElementById("totp-setup").hidden = true;
+      document.getElementById("totp-verify").hidden = true;
+      return setStatus("هذا المتصفح لا يدعم التشفير المطلوب لتوليد رموز TOTP", "red");
+    }
+    if (!sec.totpSecret) totp_setup();
+    else {
+      document.getElementById("totp-setup").hidden = true;
+      document.getElementById("totp-verify").hidden = false;
+      document.getElementById("totp-code").value = "";
+      document.getElementById("totp-code").focus();
+      setStatus("أدخل الرمز الظاهر في تطبيق المصادقة", "orange");
+    }
+  }
 
-      const builtinKey = findUserKey(USERS, user);
-      if (builtinKey && USERS[builtinKey] === pass) {
-        ok = true;
-        displayName = builtinKey;
-      } else {
-        const accounts = loadAccounts();
-        const key = findUserKey(accounts, user);
-        if (key) {
-          ok = await passwordMatches(accounts[key].hash, pass);
-          displayName = key;
-        }
-      }
+  // إنشاء مفتاح جديد وعرضه كرمز QR ليُربط بتطبيق المصادقة
+  function totp_setup() {
+    const secret = randomBase32Secret(20);
+    setSecurity(currentUser, { totpPending: secret });
 
+    document.getElementById("totp-setup").hidden = false;
+    document.getElementById("totp-verify").hidden = true;
+    document.getElementById("totp-secret-text").textContent = secret;
+    document.getElementById("totp-setup-code").value = "";
+
+    const label = encodeURIComponent(TOTP_ISSUER + ":" + currentUser);
+    const uri = "otpauth://totp/" + label +
+                "?secret=" + secret +
+                "&issuer=" + encodeURIComponent(TOTP_ISSUER) +
+                "&algorithm=SHA1&digits=" + TOTP_DIGITS + "&period=" + TOTP_PERIOD;
+
+    const box = document.getElementById("qrcode");
+    box.innerHTML = "";
+    if (typeof QRCode !== "undefined") {
+      new QRCode(box, { text: uri, width: 168, height: 168, correctLevel: QRCode.CorrectLevel.M });
+    } else {
+      box.innerHTML = '<div class="box warn">تعذّر تحميل مولّد رمز QR، أدخل المفتاح يدوياً في التطبيق.</div>';
+    }
+
+    addLog("totp", true, "بدء تهيئة مفتاح TOTP جديد");
+    setStatus("امسح الرمز ثم أدخل الرقم الظاهر في التطبيق لتأكيد الربط", "orange");
+  }
+
+  // تأكيد الربط: لا يُفعَّل المفتاح إلا بعد إدخال رمز صحيح منه
+  async function totp_setup_confirm() {
+    const sec = getSecurity(currentUser);
+    const pending = sec.totpPending;
+    const code = document.getElementById("totp-setup-code").value;
+    if (!pending) return totp_setup();
+
+    const btn = document.getElementById("totp-setup-btn");
+    btn.disabled = true;
+    try {
+      const ok = await totpCheck(pending, code);
       if (!ok) {
-        return setStatus('اسم المستخدم أو كلمة المرور غير صحيحة', 'red');
+        addLog("totp", false, "رمز تهيئة غير صحيح");
+        return setStatus("الرمز غير صحيح، تأكد من الوقت في جهازك وأعد المحاولة", "red");
       }
+      setSecurity(currentUser, { totpSecret: pending, totpAt: new Date().toISOString() });
+      clearSecurityField(currentUser, "totpPending");
+      factorResults.totp = "تم تفعيل التحقق بالرمز المؤقّت";
+      addLog("totp", true, "تفعيل TOTP بنجاح");
+      markDone("totp");
+      setStatus("تم تفعيل رمز TOTP بنجاح ✅", "green");
+      nextAfter("totp");
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
-      currentUser = displayName;
-      document.getElementById('auth-step').style.display = 'none';
-      document.getElementById('scan-step').style.display = 'block';
-      startCamera();
+  // التحقق من الرمز في كل عملية دخول
+  async function totp_verify() {
+    const sec = getSecurity(currentUser);
+    const code = document.getElementById("totp-code").value;
+    if (!sec.totpSecret) return totp_setup();
+
+    const btn = document.getElementById("totp-verify-btn");
+    btn.disabled = true;
+    setStatus("جاري التحقق من الرمز...", "orange");
+    try {
+      const ok = await totpCheck(sec.totpSecret, code);
+      if (!ok) {
+        addLog("totp", false, "رمز TOTP غير صحيح");
+        return setStatus("الرمز غير صحيح أو انتهت صلاحيته، جرّب الرمز الجديد", "red");
+      }
+      factorResults.totp = "رمز مؤقّت صحيح";
+      addLog("totp", true, "تحقق TOTP ناجح");
+      markDone("totp");
+      setStatus("الرمز صحيح ✅", "green");
+      nextAfter("totp");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* ================================================================
+     3) بصمة الجهاز — WebAuthn
+     ================================================================ */
+  async function startWebauthn() {
+    showStep("webauthn");
+    const sec = getSecurity(currentUser);
+
+    document.getElementById("wa-register").hidden = true;
+    document.getElementById("wa-verify").hidden = true;
+    document.getElementById("wa-unsupported").hidden = true;
+
+    // فحص الدعم: يحتاج HTTPS + مستشعر مدمج في الجهاز
+    if (!window.PublicKeyCredential || !navigator.credentials) {
+      return showWaUnsupported("المتصفح لا يوفّر واجهة WebAuthn.");
+    }
+    if (!window.isSecureContext) {
+      return showWaUnsupported("الصفحة مفتوحة بدون HTTPS، وبصمة الجهاز لا تعمل بدونه.");
     }
 
-    // الضغط على Enter داخل الحقول ينفّذ الزر المناسب
-    ['username', 'password'].forEach(id => {
-      document.getElementById(id).addEventListener('keydown', e => {
-        if (e.key === 'Enter') login();
-      });
-    });
-    ['reg-username', 'reg-password', 'reg-confirm'].forEach(id => {
-      document.getElementById(id).addEventListener('keydown', e => {
-        if (e.key === 'Enter') register();
-      });
-    });
+    let available = false;
+    try {
+      available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    } catch (e) {
+      available = false;
+    }
+    if (!available && !sec.webauthnId) {
+      return showWaUnsupported("لا يوجد مستشعر بصمة أو تعرّف وجه مفعّل في هذا الجهاز.");
+    }
 
-    // ---------- 2) الكاميرا المباشرة ----------
-    async function startCamera() {
-      const video = document.getElementById('webcam');
-      const captureBtn = document.getElementById('capture-btn');
-      const fallbackBox = document.getElementById('fallback-box');
+    if (sec.webauthnId) {
+      document.getElementById("wa-verify").hidden = false;
+      setStatus("اضغط الزر ثم أكّد بصمتك على الجهاز", "orange");
+    } else {
+      document.getElementById("wa-register").hidden = false;
+      setStatus("سجّل بصمة هذا الجهاز لمرة واحدة", "orange");
+    }
+  }
 
-      captureBtn.disabled = true;
-      fallbackBox.style.display = 'none';
-      setStatus('جاري تشغيل الكاميرا المباشرة...', 'orange');
+  function showWaUnsupported(reason) {
+    document.getElementById("wa-unsupported").hidden = false;
+    document.getElementById("wa-unsupported-reason").textContent = reason;
+    addLog("webauthn", false, "غير مدعوم: " + reason);
+    setStatus("بصمة الجهاز غير متاحة هنا", "orange");
+  }
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        return showFallback(window.isSecureContext
-          ? 'هذا المتصفح لا يدعم الكاميرا المباشرة'
-          : 'الكاميرا المباشرة تعمل فقط عبر رابط https');
-      }
+  function describeWaError(err) {
+    const name = err && err.name ? err.name : "";
+    if (name === "NotAllowedError") return "تم رفض العملية أو انتهت مهلتها، أعد المحاولة وأكّد بصمتك";
+    if (name === "InvalidStateError") return "هذا الجهاز مسجّل مسبقاً لهذا الحساب";
+    if (name === "SecurityError") return "نطاق الموقع غير صالح لتسجيل البصمة (تأكد من HTTPS)";
+    if (name === "NotSupportedError") return "نوع المفتاح غير مدعوم في هذا الجهاز";
+    if (name === "AbortError") return "أُلغيت العملية";
+    return "تعذّر إتمام عملية البصمة" + (name ? " (" + name + ")" : "");
+  }
 
-      // نجرب الكاميرا الخلفية أولاً (لتصوير الأغراض)، ثم أي كاميرا متاحة
-      const attempts = [
-        { video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
-        { video: true, audio: false }
-      ];
-
-      let lastError = null;
-      for (const constraints of attempts) {
-        try {
-          stopCamera();
-          videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-          video.srcObject = videoStream;
-          await video.play().catch(() => {});
-          captureBtn.disabled = false;
-          return setStatus('الكاميرا جاهزة، وجّهها نحو Coffee أو Mouse ثم اضغط التقاط والتحقق', 'green');
-        } catch (err) {
-          lastError = err;
+  // تسجيل بصمة الجهاز: المفتاح الخاص يبقى داخل الجهاز، ونحفظ معرّفه فقط
+  async function webauthn_register() {
+    const btn = document.getElementById("wa-register-btn");
+    btn.disabled = true;
+    setStatus("اتبع تعليمات جهازك لتأكيد البصمة...", "orange");
+    try {
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: challenge,
+          rp: { name: TOTP_ISSUER, id: location.hostname },
+          user: {
+            id: new TextEncoder().encode("fv-" + currentUser),
+            name: currentUser,
+            displayName: currentUser
+          },
+          pubKeyCredParams: [
+            { type: "public-key", alg: -7 },
+            { type: "public-key", alg: -257 }
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            userVerification: "required",
+            requireResidentKey: false
+          },
+          timeout: 60000,
+          attestation: "none"
         }
+      });
+
+      if (!cred) throw new Error("لم يُنشأ أي مفتاح");
+
+      setSecurity(currentUser, {
+        webauthnId: bufToB64url(cred.rawId),
+        webauthnAt: new Date().toISOString()
+      });
+
+      factorResults.webauthn = "تم تسجيل بصمة هذا الجهاز";
+      addLog("webauthn", true, "تسجيل بصمة جهاز جديدة");
+      markDone("webauthn");
+      setStatus("تم تسجيل بصمة الجهاز بنجاح ✅", "green");
+      nextAfter("webauthn");
+    } catch (err) {
+      console.error(err);
+      const msg = describeWaError(err);
+      addLog("webauthn", false, "فشل التسجيل: " + msg);
+      setStatus(msg, "red");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // التحقق: الجهاز يطابق بصمتك مع المخزّنة فيه، ونحن نطابق المفتاح العائد مع المسجّل للحساب
+  async function webauthn_verify() {
+    const sec = getSecurity(currentUser);
+    if (!sec.webauthnId) return startWebauthn();
+
+    const btn = document.getElementById("wa-verify-btn");
+    btn.disabled = true;
+    setStatus("ضع إصبعك على المستشعر...", "orange");
+    try {
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: challenge,
+          rpId: location.hostname,
+          allowCredentials: [{
+            type: "public-key",
+            id: b64urlToBuf(sec.webauthnId),
+            transports: ["internal"]
+          }],
+          userVerification: "required",
+          timeout: 60000
+        }
+      });
+
+      if (!assertion) throw new Error("لا توجد استجابة");
+
+      // (1) المفتاح العائد يجب أن يكون نفسه المسجّل لهذا الحساب على هذا الجهاز
+      if (bufToB64url(assertion.rawId) !== sec.webauthnId) {
+        throw new Error("المفتاح العائد لا يطابق البصمة المسجّلة لهذا الحساب");
       }
 
-      showFallback(describeCameraError(lastError));
-    }
+      const authData = new Uint8Array(assertion.response.authenticatorData);
+      if (authData.length < 37) throw new Error("بيانات التحقق غير مكتملة");
 
-    function describeCameraError(err) {
-      const name = err && err.name ? err.name : '';
-      switch (name) {
-        case 'NotAllowedError':
-        case 'PermissionDeniedError':
-          return 'تم رفض صلاحية الكاميرا، اسمح للكاميرا من إعدادات المتصفح أو التطبيق';
-        case 'NotFoundError':
-        case 'DevicesNotFoundError':
-          return 'لم يتم العثور على كاميرا في هذا الجهاز';
-        case 'NotReadableError':
-        case 'TrackStartError':
-          return 'الكاميرا مستخدمة حالياً من تطبيق آخر، أغلقه وأعد المحاولة';
-        case 'SecurityError':
-          return 'الكاميرا المباشرة تعمل فقط عبر رابط https';
-        default:
-          return 'تعذر تشغيل الكاميرا المباشرة' + (name ? ' (' + name + ')' : '');
+      // (2) نطاق الموقع داخل الاستجابة يجب أن يطابق نطاقنا
+      const expectedHash = new Uint8Array(
+        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(location.hostname))
+      );
+      for (let i = 0; i < 32; i++) {
+        if (authData[i] !== expectedHash[i]) throw new Error("الاستجابة صادرة لنطاق مختلف");
       }
+
+      // (3) أعلام الجهاز: حضور المستخدم + تحقّق فعلي من بصمته داخل الجهاز
+      const flags = authData[32];
+      if (!(flags & 0x01)) throw new Error("الجهاز لم يؤكّد حضور المستخدم");
+      if (!(flags & 0x04)) throw new Error("الجهاز لم يتحقق من بصمتك، فعّل قفل الشاشة بالبصمة");
+
+      factorResults.webauthn = "بصمة الجهاز مطابقة";
+      addLog("webauthn", true, "تحقق بصمة ناجح (تطابق المفتاح + تحقق المستخدم)");
+      markDone("webauthn");
+      setStatus("تم التحقق من بصمة الجهاز ✅", "green");
+      nextAfter("webauthn");
+    } catch (err) {
+      console.error(err);
+      const msg = err && err.name ? describeWaError(err) : (err.message || "فشل التحقق من البصمة");
+      addLog("webauthn", false, "فشل التحقق: " + msg);
+      setStatus(msg, "red");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function webauthn_reregister() {
+    clearSecurityField(currentUser, "webauthnId");
+    clearSecurityField(currentUser, "webauthnAt");
+    addLog("webauthn", true, "حذف البصمة المسجّلة لإعادة التسجيل");
+    startWebauthn();
+  }
+
+  /* ================================================================
+     4-أ) الموافقة الصريحة قبل الكاميرا
+     ================================================================ */
+  function startConsent() {
+    showStep("consent");
+    document.getElementById("consent-check").checked = false;
+    document.getElementById("consent-btn").disabled = true;
+    const sec = getSecurity(currentUser);
+    setStatus(sec.consentAt
+      ? "سبق أن وافقت بتاريخ " + formatTime(sec.consentAt) + "، ونطلب موافقتك في كل دخول"
+      : "نحتاج موافقتك الصريحة قبل تشغيل الكاميرا", "orange");
+  }
+
+  function onConsentToggle() {
+    document.getElementById("consent-btn").disabled = !document.getElementById("consent-check").checked;
+  }
+
+  function giveConsent() {
+    if (!document.getElementById("consent-check").checked) return;
+    setSecurity(currentUser, { consentAt: new Date().toISOString() });
+    factorResults.consent = "موافقة صريحة قبل الكاميرا";
+    addLog("consent", true, "منح موافقة صريحة على تشغيل الكاميرا");
+    startFace();
+  }
+
+  function refuseConsent() {
+    addLog("consent", false, "رفض تشغيل الكاميرا، توقفت العملية");
+    stopCamera();
+    currentUser = "";
+    doneSteps = [];
+    showStep("auth");
+    setStatus("تم إيقاف العملية لأنك لم توافق على تشغيل الكاميرا", "red");
+  }
+
+  /* ================================================================
+     4-ب) بوابة الوجه — face-api.js محلياً
+     ================================================================ */
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error("تعذّر تحميل المكتبة"));
+      document.head.appendChild(s);
+    });
+  }
+
+  function ensureFaceApi() {
+    if (!faceApiPromise) {
+      faceApiPromise = (async () => {
+        if (typeof faceapi === "undefined") await loadScriptOnce(FACE_API_SRC);
+        await faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODEL_URL);
+        await faceapi.nets.faceLandmark68TinyNet.loadFromUri(FACE_MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODEL_URL);
+        return true;
+      })().catch(err => {
+        faceApiPromise = null;
+        throw err;
+      });
+    }
+    return faceApiPromise;
+  }
+
+  // نتذكّر الحجم الذي نجح على هذا الجهاز لنبدأ به في المرات التالية
+  let lastGoodInputSize = null;
+
+  // استخراج الواصف الرقمي (128 رقماً) من صورة أو فيديو
+  async function faceDescriptorOf(source) {
+    const sizes = FACE_INPUT_SIZES.slice();
+    if (lastGoodInputSize && sizes.indexOf(lastGoodInputSize) > 0) {
+      sizes.splice(sizes.indexOf(lastGoodInputSize), 1);
+      sizes.unshift(lastGoodInputSize);
     }
 
-    // عند تعذر الكاميرا المباشرة نعرض زر التقاط صورة بكاميرا الجهاز حتى لا يتوقف الدخول
-    function showFallback(message) {
-      document.getElementById('fallback-box').style.display = 'block';
-      setStatus(message + '. يمكنك استخدام زر التقاط صورة بكاميرا الجهاز', 'red');
+    // أولاً نبحث عن حجم إدخال يكتشف الوجه (الكشف وحده سريع)
+    let chosen = null;
+    for (let i = 0; i < sizes.length; i++) {
+      const opt = new faceapi.TinyFaceDetectorOptions({
+        inputSize: sizes[i],
+        scoreThreshold: FACE_SCORE_THRESHOLD
+      });
+      const found = await faceapi.detectSingleFace(source, opt);
+      if (found) { chosen = opt; lastGoodInputSize = sizes[i]; break; }
     }
+    if (!chosen) return null;
 
-    // رسم الصورة (من الفيديو أو من ملف) داخل لوحة الالتقاط بحجم مناسب
-    function drawToSnapshot(source, width, height) {
-      const canvas = document.getElementById('snapshot');
-      const scale = Math.min(1, 640 / width);
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
-      canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
-      return canvas;
+    // ثم نشغّل خط المعالجة الكامل مرة واحدة لاستخراج الواصف
+    const det = await faceapi.detectSingleFace(source, chosen)
+      .withFaceLandmarks(true)
+      .withFaceDescriptor();
+    return det ? det.descriptor : null;
+  }
+
+  function euclidean(a, b) {
+    let sum = 0;
+    for (let i = 0; i < a.length; i++) {
+      const d = a[i] - b[i];
+      sum += d * d;
     }
+    return Math.sqrt(sum);
+  }
 
-    // التقاط إطار مباشر من الفيديو ثم تحليله بالنموذج
-    async function captureAndVerify() {
-      const video = document.getElementById('webcam');
-      if (!videoStream || !video.videoWidth) {
-        return setStatus('الكاميرا لم تبدأ بعد، انتظر لحظة ثم أعد المحاولة', 'red');
+  async function startFace() {
+    showStep("face");
+    const sec = getSecurity(currentUser);
+    const enrolled = Array.isArray(sec.faceDescriptor) && sec.faceDescriptor.length === 128;
+
+    document.getElementById("face-hint").innerHTML = enrolled
+      ? "ضع وجهك داخل الإطار في إضاءة جيدة، وسنقارنه بالواصف المحفوظ على هذا الجهاز."
+      : "أول مرة: سنأخذ واصفاً رقمياً لوجهك (وليس صورة) لاستخدامه في عمليات الدخول القادمة.";
+    document.getElementById("face-btn").textContent = enrolled ? "تحقّق من وجهي" : "تسجيل واصف وجهي";
+    document.getElementById("face-btn").disabled = true;
+    document.getElementById("face-fallback").hidden = true;
+
+    setStatus("جاري تحميل نموذج التعرّف على الوجه...", "orange");
+    try {
+      await ensureFaceApi();
+    } catch (err) {
+      console.error(err);
+      addLog("face", false, "تعذّر تحميل نموذج الوجه");
+      return setStatus("تعذّر تحميل نموذج الوجه، تأكد من الاتصال بالإنترنت ثم أعد المحاولة", "red");
+    }
+    startFaceCamera();
+  }
+
+  async function startFaceCamera() {
+    const video = document.getElementById("face-webcam");
+    const btn = document.getElementById("face-btn");
+    btn.disabled = true;
+    document.getElementById("face-fallback").hidden = true;
+    setStatus("جاري تشغيل الكاميرا الأمامية...", "orange");
+
+    const stream = await openCamera(video, "user");
+    if (!stream) {
+      document.getElementById("face-fallback").hidden = false;
+      return;
+    }
+    btn.disabled = false;
+    setStatus("الكاميرا جاهزة، ضع وجهك داخل الإطار", "green");
+  }
+
+  async function faceCapture() {
+    const video = document.getElementById("face-webcam");
+    if (!videoStream || !video.videoWidth) {
+      return setStatus("الكاميرا لم تبدأ بعد، انتظر لحظة ثم أعد المحاولة", "red");
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    await processFace(canvas);
+  }
+
+  function onFacePhoto(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = async () => {
+      URL.revokeObjectURL(url);
+      input.value = "";
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 640 / img.width);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      await processFace(canvas);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      input.value = "";
+      setStatus("تعذّر قراءة الصورة، حاول مرة أخرى", "red");
+    };
+    img.src = url;
+  }
+
+  async function processFace(source) {
+    const btn = document.getElementById("face-btn");
+    btn.disabled = true;
+    setStatus("جاري تحليل الوجه داخل جهازك...", "orange");
+    try {
+      await ensureFaceApi();
+      const descriptor = await faceDescriptorOf(source);
+
+      if (!descriptor) {
+        addLog("face", false, "لم يُعثر على وجه واضح في اللقطة");
+        return setStatus("لم نتعرّف على وجه واضح، قرّب وجهك وحسّن الإضاءة ثم أعد المحاولة", "red");
       }
-      const canvas = drawToSnapshot(video, video.videoWidth, video.videoHeight);
-      await verifyImage(canvas);
+
+      const sec = getSecurity(currentUser);
+      const stored = sec.faceDescriptor;
+
+      // أول مرة: تسجيل الواصف
+      if (!Array.isArray(stored) || stored.length !== 128) {
+        setSecurity(currentUser, {
+          faceDescriptor: Array.from(descriptor).map(n => Math.round(n * 1e6) / 1e6),
+          faceAt: new Date().toISOString()
+        });
+        factorResults.face = "تم تسجيل واصف الوجه";
+        addLog("face", true, "تسجيل واصف وجه جديد (128 رقماً، بدون صورة)");
+        markDone("face");
+        setStatus("تم تسجيل واصف وجهك ✅ (لم تُحفظ أي صورة)", "green");
+        return nextAfter("face");
+      }
+
+      // المرات التالية: مقارنة
+      const distance = euclidean(descriptor, stored);
+      const shown = distance.toFixed(3);
+      if (distance <= FACE_MATCH_THRESHOLD) {
+        factorResults.face = "وجه مطابق (مسافة " + shown + ")";
+        addLog("face", true, "تطابق وجه، المسافة " + shown);
+        markDone("face");
+        setStatus("تم التعرّف على وجهك ✅ (المسافة " + shown + ")", "green");
+        nextAfter("face");
+      } else {
+        addLog("face", false, "وجه غير مطابق، المسافة " + shown);
+        setStatus("الوجه غير مطابق للواصف المحفوظ (المسافة " + shown +
+                  " والحد المسموح " + FACE_MATCH_THRESHOLD + ")", "red");
+      }
+    } catch (err) {
+      console.error(err);
+      addLog("face", false, "خطأ أثناء تحليل الوجه");
+      setStatus("حدث خطأ أثناء تحليل الوجه، أعد المحاولة", "red");
+    } finally {
+      if (videoStream) btn.disabled = false;
+    }
+  }
+
+  /* ================================================================
+     5) العنصر الحي Coffee / Mouse
+     ================================================================ */
+  function loadModel() {
+    if (model) return Promise.resolve(model);
+    if (!modelPromise) {
+      modelPromise = (async () => {
+        if (typeof tmImage === "undefined") throw new Error("مكتبة التعرّف لم تُحمَّل");
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        return model;
+      })().catch(err => {
+        modelPromise = null;
+        throw err;
+      });
+    }
+    return modelPromise;
+  }
+
+  function startScan() {
+    showStep("scan");
+    startCamera();
+  }
+
+  async function startCamera() {
+    const video = document.getElementById("webcam");
+    const btn = document.getElementById("capture-btn");
+    btn.disabled = true;
+    document.getElementById("fallback-box").hidden = true;
+    setStatus("جاري تشغيل الكاميرا الخلفية...", "orange");
+
+    const stream = await openCamera(video, "environment");
+    if (!stream) {
+      document.getElementById("fallback-box").hidden = false;
+      return;
+    }
+    btn.disabled = false;
+    setStatus("وجّه الكاميرا نحو Coffee أو Mouse ثم اضغط التقاط والتحقق", "green");
+  }
+
+  function drawToSnapshot(source, width, height) {
+    const canvas = document.getElementById("snapshot");
+    const scale = Math.min(1, 640 / width);
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+
+  async function captureAndVerify() {
+    const video = document.getElementById("webcam");
+    if (!videoStream || !video.videoWidth) {
+      return setStatus("الكاميرا لم تبدأ بعد، انتظر لحظة ثم أعد المحاولة", "red");
+    }
+    await verifyImage(drawToSnapshot(video, video.videoWidth, video.videoHeight));
+  }
+
+  function onFallbackPhoto(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = async () => {
+      URL.revokeObjectURL(url);
+      input.value = "";
+      await verifyImage(drawToSnapshot(img, img.width, img.height));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      input.value = "";
+      setStatus("تعذّر قراءة الصورة، حاول مرة أخرى", "red");
+    };
+    img.src = url;
+  }
+
+  async function verifyImage(source) {
+    const btn = document.getElementById("capture-btn");
+    btn.disabled = true;
+    try {
+      if (!model) setStatus("جاري تحميل نموذج التعرّف...", "orange");
+      const m = await loadModel();
+
+      setStatus("جاري تحليل الصورة...", "orange");
+      const predictions = await m.predict(source);
+      const best = predictions.reduce((a, b) => (b.probability > a.probability ? b : a), predictions[0]);
+      const label = best.className.trim().toUpperCase();
+      const confidence = (best.probability * 100).toFixed(1);
+
+      if (ALLOWED_LABELS.indexOf(label) !== -1 && best.probability >= MIN_CONFIDENCE) {
+        factorResults.scan = "عنصر حي مطابق: " + label + " (" + confidence + "%)";
+        addLog("scan", true, "تعرّف على " + label + " بنسبة " + confidence + "%");
+        markDone("scan");
+        stopCamera();
+        showDone();
+      } else {
+        addLog("scan", false, "عنصر غير مطابق، أعلى تطابق " + label + " " + confidence + "%");
+        setStatus("لم يتم التعرّف على Coffee أو Mouse بوضوح (أعلى تطابق: " + label + " " +
+                  confidence + "%)، قرّب الغرض وأعد المحاولة", "red");
+      }
+    } catch (err) {
+      console.error(err);
+      addLog("scan", false, "تعذّر تحميل نموذج العنصر الحي");
+      setStatus("تعذّر تحميل نموذج التعرّف، تأكد من الاتصال بالإنترنت ثم أعد المحاولة", "red");
+    } finally {
+      if (videoStream) btn.disabled = false;
+    }
+  }
+
+  /* ================================================================
+     6) النجاح والدخول
+     ================================================================ */
+  function showDone() {
+    stopCamera();
+    markVerified();
+    showStep("done");
+
+    const names = {
+      auth: "الحساب وكلمة المرور",
+      totp: "رمز TOTP",
+      webauthn: "بصمة الجهاز",
+      consent: "الموافقة الصريحة",
+      face: "بوابة الوجه",
+      scan: "العنصر الحي"
+    };
+    const box = document.getElementById("factors-summary");
+    box.innerHTML = "<b>العوامل التي تم اجتيازها:</b>";
+    const ul = document.createElement("ul");
+    ["auth", "totp", "webauthn", "consent", "face", "scan"].forEach(k => {
+      if (!factorResults[k]) return;
+      const li = document.createElement("li");
+      li.textContent = names[k] + ": " + factorResults[k];
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+
+    addLog("done", true, "اكتمل التحقق ودخول المستخدم");
+    setStatus("اكتمل التحقق بنجاح ✅ مرحباً " + currentUser, "green");
+  }
+
+  function markVerified() {
+    try {
+      sessionStorage.setItem("fv_verified", "1");
+      sessionStorage.setItem("fv_user", currentUser);
+    } catch (e) {}
+  }
+
+  function enterVault() {
+    markVerified();
+    location.href = VAULT_PAGE;
+  }
+
+  function logout() {
+    stopCamera();
+    try {
+      sessionStorage.removeItem("fv_verified");
+      sessionStorage.removeItem("fv_user");
+    } catch (e) {}
+    addLog("logout", true, "تسجيل خروج");
+    location.reload();
+  }
+
+  /* ================================================================
+     أدوات الكاميرا
+     ================================================================ */
+  async function openCamera(videoEl, facing) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus(window.isSecureContext
+        ? "هذا المتصفح لا يدعم الكاميرا المباشرة"
+        : "الكاميرا تعمل فقط عبر رابط https", "red");
+      return null;
     }
 
-    // صورة من كاميرا الجهاز (البديل) ثم تحليلها بنفس النموذج
-    function onFallbackPhoto(input) {
-      const file = input.files && input.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = drawToSnapshot(img, img.width, img.height);
-        URL.revokeObjectURL(url);
-        input.value = '';
-        await verifyImage(canvas);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        input.value = '';
-        setStatus('تعذر قراءة الصورة، حاول مرة أخرى', 'red');
-      };
-      img.src = url;
-    }
+    const attempts = [
+      { video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
+      { video: true, audio: false }
+    ];
 
-    // ---------- 3) التحقق عبر نموذج Coffee / Mouse ----------
-    async function verifyImage(source) {
-      const captureBtn = document.getElementById('capture-btn');
-      captureBtn.disabled = true;
+    let lastError = null;
+    for (let i = 0; i < attempts.length; i++) {
       try {
-        if (!model) setStatus('جاري تحميل نموذج التعرف...', 'orange');
-        const m = await loadModel();
-
-        setStatus('جاري تحليل الصورة...', 'orange');
-        const predictions = await m.predict(source);
-        const best = predictions.reduce((a, b) => (b.probability > a.probability ? b : a), predictions[0]);
-        const label = best.className.trim().toUpperCase();
-        const confidence = (best.probability * 100).toFixed(1);
-
-        if (ALLOWED_LABELS.includes(label) && best.probability >= MIN_CONFIDENCE) {
-          finishVerification(label, confidence);
-        } else {
-          setStatus('لم يتم التعرف على Coffee أو Mouse بوضوح (أعلى تطابق: ' + label + ' ' + confidence + '%)، قرّب الغرض وأعد المحاولة', 'red');
-        }
+        stopCamera();
+        const stream = await navigator.mediaDevices.getUserMedia(attempts[i]);
+        videoStream = stream;
+        videoEl.srcObject = stream;
+        await videoEl.play().catch(() => {});
+        return stream;
       } catch (err) {
-        console.error(err);
-        setStatus('تعذر تحميل نموذج التعرف، تأكد من الاتصال بالإنترنت ثم أعد المحاولة', 'red');
-      } finally {
-        if (videoStream) captureBtn.disabled = false;
+        lastError = err;
       }
     }
 
-    function finishVerification(label, confidence) {
-      stopCamera();
-      markVerified();
-      document.getElementById('scan-step').style.display = 'none';
-      document.getElementById('done-step').style.display = 'block';
-      setStatus('تم التحقق بنجاح ✅ العنصر: ' + label + ' (' + confidence + '%) - مرحباً ' + currentUser + '، اضغط متابعة للدخول', 'green');
-    }
+    const msg = describeCameraError(lastError);
+    addLog("camera", false, msg);
+    setStatus(msg + ". يمكنك استخدام زر التقاط صورة بكاميرا الجهاز", "red");
+    return null;
+  }
 
-    // حفظ حالة التحقق لهذه الجلسة حتى تسمح صفحة vault.html بالدخول
-    function markVerified() {
-      try {
-        sessionStorage.setItem('fv_verified', '1');
-        sessionStorage.setItem('fv_user', currentUser);
-      } catch (e) {}
+  function describeCameraError(err) {
+    const name = err && err.name ? err.name : "";
+    switch (name) {
+      case "NotAllowedError":
+      case "PermissionDeniedError":
+        return "تم رفض صلاحية الكاميرا، اسمح للكاميرا من إعدادات المتصفح";
+      case "NotFoundError":
+      case "DevicesNotFoundError":
+        return "لم يتم العثور على كاميرا في هذا الجهاز";
+      case "NotReadableError":
+      case "TrackStartError":
+        return "الكاميرا مستخدمة حالياً من تطبيق آخر، أغلقه وأعد المحاولة";
+      case "SecurityError":
+        return "الكاميرا تعمل فقط عبر رابط https";
+      default:
+        return "تعذّر تشغيل الكاميرا" + (name ? " (" + name + ")" : "");
     }
+  }
 
-    // ---------- 4) الدخول إلى الصفحة الداخلية ----------
-    function enterVault() {
-      markVerified();
-      location.href = VAULT_PAGE;
+  function stopCamera() {
+    if (videoStream) {
+      videoStream.getTracks().forEach(t => t.stop());
+      videoStream = null;
     }
+    ["webcam", "face-webcam"].forEach(id => {
+      const v = document.getElementById(id);
+      if (v) v.srcObject = null;
+    });
+  }
 
-    function logout() {
-      stopCamera();
-      try {
-        sessionStorage.removeItem('fv_verified');
-        sessionStorage.removeItem('fv_user');
-      } catch (e) {}
-      location.reload();
-    }
+  window.addEventListener("pagehide", stopCamera);
 
-    function stopCamera() {
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
+  /* ================================================================
+     السجل ونافذة الخصوصية
+     ================================================================ */
+  function formatTime(iso) {
+    try {
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, "0");
+      return pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() +
+             " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    } catch (e) { return iso; }
+  }
+
+  const STEP_NAMES = {
+    auth: "الحساب", register: "إنشاء حساب", totp: "رمز TOTP", webauthn: "بصمة الجهاز",
+    consent: "الموافقة", face: "بوابة الوجه", scan: "العنصر الحي", camera: "الكاميرا",
+    done: "اكتمال الدخول", logout: "خروج", privacy: "الخصوصية"
+  };
+
+  function openLog() {
+    const list = readLog();
+    const box = document.getElementById("log-list");
+    box.innerHTML = "";
+    if (!list.length) {
+      box.innerHTML = '<p class="empty">لا توجد محاولات مسجّلة بعد.</p>';
+    } else {
+      list.slice(0, 20).forEach(item => {
+        const div = document.createElement("div");
+        div.className = "log-item " + (item.ok ? "ok" : "fail");
+        const head = document.createElement("div");
+        head.innerHTML = '<span class="who">' + (item.user || "—") + "</span> · " +
+                         (STEP_NAMES[item.step] || item.step) + " · " +
+                         (item.ok ? "نجاح ✅" : "فشل ❌");
+        const msg = document.createElement("div");
+        msg.textContent = item.msg;
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = formatTime(item.t);
+        div.append(head, msg, meta);
+        box.appendChild(div);
+      });
+      if (list.length > 20) {
+        const more = document.createElement("p");
+        more.className = "empty";
+        more.textContent = "ويوجد " + (list.length - 20) + " محاولة أقدم في السجل.";
+        box.appendChild(more);
       }
-      const video = document.getElementById('webcam');
-      if (video) video.srcObject = null;
+    }
+    document.getElementById("log-modal").hidden = false;
+  }
+
+  function clearLog() {
+    if (!confirm("مسح كل سجل المحاولات نهائياً؟")) return;
+    try { localStorage.removeItem(LOG_KEY); } catch (e) {}
+    openLog();
+  }
+
+  function openPrivacy() {
+    const sec = allSecurity();
+    const box = document.getElementById("privacy-list");
+    box.innerHTML = "";
+    const users = Object.keys(sec);
+
+    if (!users.length) {
+      box.innerHTML = '<p class="empty">لا توجد بيانات تحقّق محفوظة على هذا الجهاز.</p>';
+    } else {
+      users.forEach(user => {
+        const data = sec[user] || {};
+        const block = document.createElement("div");
+        block.className = "acct-block";
+
+        const title = document.createElement("h4");
+        title.textContent = "الحساب: " + user;
+        block.appendChild(title);
+
+        const chips = document.createElement("div");
+        chips.className = "chip-row";
+        const hasFace = Array.isArray(data.faceDescriptor) && data.faceDescriptor.length === 128;
+        [
+          ["واصف وجه", hasFace],
+          ["بصمة جهاز", !!data.webauthnId],
+          ["مفتاح TOTP", !!data.totpSecret]
+        ].forEach(pair => {
+          const chip = document.createElement("span");
+          chip.className = "chip" + (pair[1] ? " on" : "");
+          chip.textContent = pair[0] + (pair[1] ? " ✓" : " —");
+          chips.appendChild(chip);
+        });
+        block.appendChild(chips);
+
+        if (hasFace && data.faceAt) {
+          const when = document.createElement("div");
+          when.style.cssText = "font-size:12px;color:#888;margin-bottom:8px;";
+          when.textContent = "سُجّل واصف الوجه في " + formatTime(data.faceAt);
+          block.appendChild(when);
+        }
+
+        if (hasFace) {
+          const del = document.createElement("button");
+          del.className = "btn-main btn-danger";
+          del.textContent = "حذف واصف الوجه نهائياً";
+          del.onclick = () => deleteDescriptor(user);
+          block.appendChild(del);
+        }
+        if (data.webauthnId) {
+          const del = document.createElement("button");
+          del.className = "btn-main btn-danger";
+          del.textContent = "حذف بصمة الجهاز المسجّلة";
+          del.onclick = () => deleteSecurityItem(user, "webauthnId", "بصمة الجهاز");
+          block.appendChild(del);
+        }
+        if (data.totpSecret) {
+          const del = document.createElement("button");
+          del.className = "btn-main btn-danger";
+          del.textContent = "حذف مفتاح TOTP";
+          del.onclick = () => deleteSecurityItem(user, "totpSecret", "مفتاح TOTP");
+          block.appendChild(del);
+        }
+
+        const all = document.createElement("button");
+        all.className = "btn-main btn-danger";
+        all.textContent = "حذف كل بيانات الأمان لهذا الحساب";
+        all.onclick = () => deleteAllSecurity(user);
+        block.appendChild(all);
+
+        box.appendChild(block);
+      });
+    }
+    document.getElementById("privacy-modal").hidden = false;
+  }
+
+  // زر حذف الواصف نهائياً
+  function deleteDescriptor(user) {
+    if (!confirm("سيُحذف واصف وجه الحساب \"" + user + "\" نهائياً ولا يمكن التراجع. متابعة؟")) return;
+    clearSecurityField(user, "faceDescriptor");
+    clearSecurityField(user, "faceAt");
+    addLog("privacy", true, "حذف واصف الوجه نهائياً للحساب " + user);
+    openPrivacy();
+    setStatus("تم حذف واصف الوجه نهائياً ✅", "green");
+  }
+
+  function deleteSecurityItem(user, field, label) {
+    if (!confirm("سيُحذف " + label + " للحساب \"" + user + "\" نهائياً. متابعة؟")) return;
+    clearSecurityField(user, field);
+    addLog("privacy", true, "حذف " + label + " للحساب " + user);
+    openPrivacy();
+    setStatus("تم حذف " + label + " ✅", "green");
+  }
+
+  function deleteAllSecurity(user) {
+    if (!confirm("سيُحذف كل بيانات الأمان (الوجه، البصمة، TOTP) للحساب \"" + user + "\". متابعة؟")) return;
+    dropSecurity(user);
+    addLog("privacy", true, "حذف كل بيانات الأمان للحساب " + user);
+    openPrivacy();
+    setStatus("تم حذف كل بيانات الأمان لهذا الحساب ✅", "green");
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).hidden = true;
+  }
+
+  /* ================================================================
+     التهيئة
+     ================================================================ */
+  function init() {
+    renderSteps();
+    showStep("auth");
+
+    if (!window.isSecureContext) {
+      document.getElementById("insecure-banner").hidden = false;
     }
 
-    // إيقاف الكاميرا عند مغادرة الصفحة
-    window.addEventListener('pagehide', stopCamera);
+    // Enter داخل الحقول
+    const bind = (id, fn) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") fn(); });
+    };
+    bind("username", login);
+    bind("password", login);
+    bind("reg-username", register);
+    bind("reg-password", register);
+    bind("reg-confirm", register);
+    bind("totp-code", totp_verify);
+    bind("totp-setup-code", totp_setup_confirm);
 
-    function setStatus(msg, color = 'black') {
-      const el = document.getElementById('status-msg');
-      el.innerText = msg;
-      el.style.color = color === 'green' ? '#2E7D32' : color === 'red' ? '#C62828' : '#D97706';
-    }
+    // قبول الأرقام فقط في حقول الرمز
+    ["totp-code", "totp-setup-code"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", () => { el.value = el.value.replace(/\D/g, "").slice(0, TOTP_DIGITS); });
+    });
+
+    // إغلاق النوافذ بالضغط على الخلفية
+    ["log-modal", "privacy-modal"].forEach(id => {
+      const m = document.getElementById(id);
+      m.addEventListener("click", e => { if (e.target === m) m.hidden = true; });
+    });
+
+    // تحميل نموذج العنصر الحي مبكراً
+    loadModel().catch(err => console.warn("تعذّر تحميل نموذج العنصر الحي مبكراً:", err));
+  }
+
+  init();
   </script>
 </body>
 </html>
