@@ -119,8 +119,10 @@ export async function launch(url, opts) {
   const proc = spawn(chrome, args, { stdio: 'ignore' });
 
   const targets = await fetchJson('http://127.0.0.1:' + port + '/json/list');
-  const page = targets.find(t => t.type === 'page' && t.webSocketDebuggerUrl);
-  if (!page) throw new Error('لم يُعثر على صفحة في المتصفّح');
+  const pages = targets.filter(t => t.type === 'page' && t.webSocketDebuggerUrl);
+  if (!pages.length) throw new Error('لم يُعثر على صفحة في المتصفّح');
+  // قد يفتح المتصفّح صفحة فارغة إضافية، فنفضّل الصفحة التي تحمل رابطنا
+  const page = pages.find(t => t.url && t.url.startsWith(url)) || pages[0];
 
   const ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((res, rej) => {
@@ -208,7 +210,8 @@ export async function launch(url, opts) {
     try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) {}
   }
 
-  await waitReady();
+  // ننتقل للرابط صراحةً حتى لو اتصلنا بصفحة فارغة، فلا نعتمد على ترتيب الأهداف
+  await goto(url);
   return { evaluate, goto, screenshot, close, send, sleep };
 }
 

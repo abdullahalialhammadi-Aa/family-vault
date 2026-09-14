@@ -36,7 +36,8 @@ async function ensureFixtures() {
 await ensureFixtures();
 
 const server = await startServer([root, fixtures]);
-const B = await launch(server.url + '/index.html', { fakeCamera: true });
+// مهلة واسعة: تحميل نموذج الوجه على معالج خادم التكامل المستمر أبطأ بكثير من الجهاز المحلي
+const B = await launch(server.url + '/index.html', { fakeCamera: true, timeout: 600000 });
 const t = createChecker();
 const status = () => 'document.getElementById("status-msg").innerText';
 
