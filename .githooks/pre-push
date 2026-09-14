@@ -1,0 +1,14 @@
+#!/bin/sh
+# يمنع الرفع إذا فشلت الفحوص السريعة.
+# للتفعيل:  git config core.hooksPath .githooks
+# لتخطّيه مرة واحدة:  git push --no-verify
+
+echo "تشغيل الفحوص السريعة قبل الرفع..."
+if ! npm run --silent test; then
+  echo ""
+  echo "تم إيقاف الرفع لأن الفحوص فشلت."
+  echo "أصلح الخطأ، أو استخدم git push --no-verify للتخطّي عمداً."
+  exit 1
+fi
+echo "الفحوص نجحت، يكمل الرفع."
+exit 0

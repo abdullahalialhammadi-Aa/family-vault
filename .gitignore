@@ -1,0 +1,9 @@
+# مخرجات الاختبار
+tests/.fixtures/
+tests/screenshots/
+node_modules/
+*.log
+
+# ملفات النظام
+.DS_Store
+Thumbs.db

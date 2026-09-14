@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: فحوص ثابتة و TOTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: فحص بنية الصفحات
+        run: node tests/structure.test.mjs
+
+      - name: اختبار TOTP مقابل معيار RFC 6238
+        run: node tests/totp.test.mjs
+
+  browser:
+    name: اختبار البوابة في متصفّح
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: التأكّد من توفّر Chrome
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+          elif command -v chromium-browser >/dev/null 2>&1; then
+            chromium-browser --version
+          else
+            sudo apt-get update
+            sudo apt-get install -y chromium-browser
+          fi
+
+      - name: تشغيل اختبار بوابة التحقّق الثلاثية
+        run: node tests/flow.test.mjs
+
+      - name: رفع لقطات الشاشة عند الفشل
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: tests/screenshots/
+          if-no-files-found: ignore
