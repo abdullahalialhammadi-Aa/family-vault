@@ -29,8 +29,17 @@ const required = {
   'حذف الواصف نهائياً': 'function deleteDescriptor(',
   'سجل المحاولات': 'function addLog(',
   'شاشة الموافقة': 'function giveConsent()',
-  'رفض الموافقة': 'function refuseConsent()'
+  'رفض الموافقة': 'function refuseConsent()',
+  'تخطّي الخطوات': 'function skipStep(',
+  'إعداد تفعيل التخطّي': 'const ALLOW_SKIP'
 };
+
+/* ---------- زر تخطٍّ لكل خطوة ---------- */
+const skipTargets = ['totp', 'webauthn', 'consent', 'face', 'scan'];
+for (const key of skipTargets) {
+  t.check('زر تخطّي لخطوة ' + key, index.includes("skipStep('" + key + "')"), true);
+}
+t.check('عدد أزرار التخطّي', (index.match(/class="btn-skip skip-control"/g) || []).length, 5);
 for (const [name, needle] of Object.entries(required)) {
   t.check(name, index.includes(needle), true);
 }

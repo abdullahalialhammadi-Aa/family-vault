@@ -76,7 +76,12 @@ export function startServer(roots) {
       resolve({
         // localhost وليس 127.0.0.1 لأن WebAuthn يرفض عناوين IP كنطاق
         url: 'http://localhost:' + port,
-        close: () => new Promise(r => server.close(r))
+        // نقطع الاتصالات المفتوحة أولاً، وإلا انتظر الإغلاق إلى الأبد
+        close: () => new Promise(r => {
+          if (server.closeAllConnections) server.closeAllConnections();
+          server.close(r);
+          setTimeout(r, 3000);
+        })
       });
     });
   });
@@ -205,8 +210,14 @@ export async function launch(url, opts) {
 
   async function close() {
     try { ws.close(); } catch (e) {}
+    // المتصفّح يفرّخ عمليات فرعية، وقتل العملية الأصل وحدها يتركها معلّقة
+    if (process.platform === 'win32' && proc.pid) {
+      try {
+        spawn('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+      } catch (e) { /* نكمل بالطريقة العادية */ }
+    }
     try { proc.kill(); } catch (e) {}
-    await sleep(400);
+    await sleep(700);
     try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) {}
   }
 

@@ -9,30 +9,59 @@ import { launch, startServer, createChecker, sleep } from './cdp.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fixtures = path.join(root, 'tests', '.fixtures');
 
-/* ---------- صور اختبار تُنزَّل عند التشغيل ولا تُحفظ في المستودع ---------- */
-const FIXTURE_BASE = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/examples/images/';
-const FIXTURES = { 'amy1.png': 'amy/amy1.png', 'amy2.png': 'amy/amy2.png', 'howard1.png': 'howard/howard1.png' };
+/* ---------- ملفات اختبار تُنزَّل مرة واحدة ولا تُحفظ في المستودع ----------
+   نقدّم مكتبة التعرّف ونموذجها محلياً أثناء الاختبار بدل شبكة توصيل المحتوى،
+   لأن خوادم التكامل المستمر قد لا تصل إليها فيتعلّق التحميل. الصفحة نفسها
+   تبقى تستخدم الشبكة كما هي في الإنتاج، والاختبار يعيد توجيه طلباتها فقط. */
+const IMG_BASE = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/examples/images/';
+const FACE_LIB = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+const MODEL_BASE = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+
+const MODEL_FILES = [
+  'tiny_face_detector_model-weights_manifest.json',
+  'tiny_face_detector_model-shard1',
+  'face_landmark_68_tiny_model-weights_manifest.json',
+  'face_landmark_68_tiny_model-shard1',
+  'face_recognition_model-weights_manifest.json',
+  'face_recognition_model-shard1',
+  'face_recognition_model-shard2'
+];
+
+const modelDir = path.join(fixtures, 'facemodel');
+
+async function download(url, dest, minSize) {
+  if (fs.existsSync(dest) && fs.statSync(dest).size >= (minSize || 1000)) return;
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  let lastErr = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+      if (fs.statSync(dest).size >= (minSize || 1000)) return;
+      lastErr = 'الملف أصغر من المتوقّع';
+    } catch (e) {
+      lastErr = e.message;
+      await sleep(1500);
+    }
+  }
+  throw new Error('تعذّر تنزيل ' + url + ' (' + lastErr + ')');
+}
 
 async function ensureFixtures() {
   fs.mkdirSync(fixtures, { recursive: true });
-  for (const [local, remote] of Object.entries(FIXTURES)) {
-    const dest = path.join(fixtures, local);
-    if (fs.existsSync(dest) && fs.statSync(dest).size > 1000) continue;
-    let ok = false;
-    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
-      try {
-        const res = await fetch(FIXTURE_BASE + remote);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
-        ok = fs.statSync(dest).size > 1000;
-      } catch (e) {
-        await sleep(1500);
-      }
-    }
-    if (!ok) throw new Error('تعذّر تنزيل صورة الاختبار ' + local);
+  for (const [local, remote] of Object.entries(
+    { 'amy1.png': 'amy/amy1.png', 'amy2.png': 'amy/amy2.png', 'howard1.png': 'howard/howard1.png' }
+  )) {
+    await download(IMG_BASE + remote, path.join(fixtures, local));
+  }
+  await download(FACE_LIB, path.join(modelDir, 'face-api.min.js'), 100000);
+  for (const f of MODEL_FILES) {
+    await download(MODEL_BASE + '/' + f, path.join(modelDir, f), 100);
   }
 }
 
+console.log('تجهيز ملفات الاختبار...');
 await ensureFixtures();
 
 const server = await startServer([root, fixtures]);
@@ -42,8 +71,34 @@ const t = createChecker();
 const status = () => 'document.getElementById("status-msg").innerText';
 
 try {
-  /* ---------- 1) تحميل الصفحة ---------- */
+  /* ---------- 0) تحضير مكتبة التعرّف محلياً ----------
+     يجب أن يتم قبل أي خطوة تستدعي بوابة الوجه، لأن الصفحة تبدأ تحميل المكتبة
+     بمجرّد الموافقة على الكاميرا. لو حُقنت النسخة المحلية بعد ذلك لتحمّلت
+     المكتبة مرتين فتنشأ نسخة ثانية بنماذج فارغة ويتعلّق التحليل. */
   let r = await B.evaluate(`
+    if (typeof faceapi !== 'undefined') return { already: true };
+
+    const origFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (url.indexOf(FACE_MODEL_URL) === 0) {
+        return origFetch('/facemodel' + url.slice(FACE_MODEL_URL.length), init);
+      }
+      return origFetch(input, init);
+    };
+
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = '/facemodel/face-api.min.js';
+      s.onload = res;
+      s.onerror = () => rej(new Error('تعذّر تحميل مكتبة التعرّف محلياً'));
+      document.head.appendChild(s);
+    });
+    return { already: false, loaded: typeof faceapi !== 'undefined' };`);
+  t.check('تحضير مكتبة التعرّف محلياً', r.already || r.loaded, true);
+
+  /* ---------- 1) تحميل الصفحة ---------- */
+  r = await B.evaluate(`
     window.confirm = () => true;
     localStorage.clear(); sessionStorage.clear();
     return {
@@ -233,7 +288,7 @@ try {
   t.check('تسجيل وقت الموافقة', r.consentAt, true);
 
   /* ---------- 8) بوابة الوجه ---------- */
-  await B.evaluate(`
+  r = await B.evaluate(`
     window.canvasFrom = async (src) => {
       const img = new Image();
       img.src = src;
@@ -243,8 +298,15 @@ try {
       c.getContext('2d').drawImage(img, 0, 0);
       return c;
     };
+    const t = performance.now();
     await ensureFaceApi();
-    return true;`);
+    return {
+      libLoaded: typeof faceapi !== 'undefined',
+      backend: faceapi.tf.getBackend(),
+      ms: Math.round(performance.now() - t)
+    };`);
+  t.check('جاهزية نموذج التعرّف على الوجه', r.libLoaded, true);
+  t.note('محرّك الحساب: ' + r.backend + ' — زمن تجهيز النموذج: ' + r.ms + 'ms');
 
   r = await B.evaluate(`
     const c = document.createElement('canvas'); c.width = 320; c.height = 240;
@@ -393,7 +455,66 @@ try {
   t.check('إعادة التسجيل بعد الحذف', r.factor, 'تم تسجيل واصف الوجه');
   t.check('طول الواصف الجديد 128', r.len, 128);
 
-  /* ---------- 13) حماية الصفحة الداخلية ---------- */
+  /* ---------- 13) تخطّي الخطوات ---------- */
+  r = await B.evaluate(`
+    logout === undefined;
+    stopCamera();
+    doneSteps = []; skippedSteps = []; factorResults = {};
+    showStep('auth');
+    document.getElementById('username').value = 'tester';
+    document.getElementById('password').value = 'pass1234';
+    await login();
+    await new Promise(r => setTimeout(r, 300));
+    const out = { afterLogin: currentStep };
+
+    skipStep('totp');
+    await new Promise(r => setTimeout(r, 400));
+    out.afterTotpSkip = currentStep;
+
+    skipStep('webauthn');
+    await new Promise(r => setTimeout(r, 400));
+    out.afterWaSkip = currentStep;
+
+    out.skippedSoFar = skippedSteps.slice();
+    out.dotsSkipped = document.querySelectorAll('.step-dot.skipped').length;
+    return out;`);
+  t.check('الدخول يبدأ من خطوة TOTP', r.afterLogin, 'totp');
+  t.check('تخطّي TOTP ينقل لبصمة الجهاز', r.afterTotpSkip, 'webauthn');
+  t.check('تخطّي البصمة ينقل للموافقة', r.afterWaSkip, 'consent');
+  t.check('تسجيل الخطوات المتخطّاة', r.skippedSoFar, ['totp', 'webauthn']);
+  t.check('المؤشّر يميّز الخطوات المتخطّاة', r.dotsSkipped, 2);
+
+  r = await B.evaluate(`
+    skipStep('consent');
+    await new Promise(r => setTimeout(r, 500));
+    return {
+      step: currentStep,
+      skipped: skippedSteps.slice(),
+      cameraOff: !videoStream,
+      items: document.querySelectorAll('#factors-summary li').length,
+      warned: /تم تخطّي/.test(document.getElementById('factors-summary').innerText),
+      boxClass: document.getElementById('factors-summary').className,
+      status: ${status()},
+      verified: sessionStorage.getItem('fv_verified')
+    };`);
+  t.check('تخطّي الموافقة ينهي العملية مباشرة', r.step, 'done');
+  t.check('تخطّي الموافقة يتخطّى الوجه والعنصر معاً', r.skipped.sort(), ['consent', 'face', 'scan', 'totp', 'webauthn']);
+  t.check('عدم تشغيل الكاميرا بعد تخطّي الموافقة', r.cameraOff, true);
+  t.check('الملخّص يعرض كل العوامل', r.items, 6);
+  t.check('الملخّص يحذّر من التخطّي', r.warned, true);
+  t.check('الملخّص يأخذ شكل التحذير', /warn/.test(r.boxClass), true);
+  t.check('رسالة الحالة تنبّه للتخطّي', /تخطّي بعض العوامل/.test(r.status), true);
+
+  r = await B.evaluate(`
+    const log = readLog();
+    return {
+      skipLogged: log.filter(e => /تخطّى المستخدم|تخطٍّ تلقائي/.test(e.msg)).length,
+      allMarkedFail: log.filter(e => /تخطّى المستخدم|تخطٍّ تلقائي/.test(e.msg)).every(e => e.ok === false)
+    };`);
+  t.check('السجل يوثّق كل تخطٍّ', r.skipLogged >= 5, true);
+  t.check('التخطّي يُسجَّل كعدم اجتياز', r.allMarkedFail, true);
+
+  /* ---------- 14) حماية الصفحة الداخلية ---------- */
   await B.goto(server.url + '/vault.html');
   r = await B.evaluate(`
     return { path: location.pathname, welcome: (document.getElementById('welcomeUser') || {}).innerText || null };`);

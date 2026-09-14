@@ -29,6 +29,21 @@ jobs:
       - name: فحص بنية الصفحات
         run: node tests/structure.test.mjs
 
+      # تقرير فقط ولا يُسقط البناء: شبكة الخادم قد تحجب الشبكة الخارجية
+      # بينما تعمل عند المستخدمين عادةً
+      - name: التحقّق من وصول المكتبات الخارجية
+        continue-on-error: true
+        run: |
+          for u in \
+            "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js" \
+            "https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js" \
+            "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" \
+            "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" \
+            "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights/face_recognition_model-shard1"; do
+            printf '%s  ' "$(curl -s -o /dev/null -w 'HTTP %{http_code} في %{time_total}ث %{size_download}بايت' --max-time 30 "$u")"
+            echo "$u"
+          done
+
       - name: اختبار TOTP مقابل معيار RFC 6238
         run: node tests/totp.test.mjs
 

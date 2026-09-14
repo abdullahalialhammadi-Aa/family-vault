@@ -119,6 +119,14 @@
 
     .step-dot.done { color: var(--ok); }
 
+    .step-dot.skipped i {
+      background: #F0E4CC;
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .step-dot.skipped { color: var(--warn); }
+
     /* ===== عناصر عامة ===== */
     .step-title {
       font-size: 16px;
@@ -188,6 +196,21 @@
     }
 
     .btn-danger:hover { background-color: #FDEDED; }
+
+    /* زر التخطّي: باهت عمداً حتى لا يبدو الخيار الافتراضي */
+    .btn-skip {
+      background: none;
+      border: none;
+      color: #9a8b7a;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 10px 4px 2px;
+      width: 100%;
+      text-decoration: underline;
+    }
+
+    .btn-skip:hover { color: var(--warn); }
 
     /* تبويبات الدخول / إنشاء حساب */
     .tab-group {
@@ -511,6 +534,8 @@
         <input type="text" id="totp-code" class="input-field code-input" placeholder="000000" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
         <button class="btn-main" id="totp-verify-btn" onclick="totp_verify()">تحقّق من الرمز</button>
       </div>
+
+      <button class="btn-skip skip-control" onclick="skipStep('totp')">تخطّي هذه الخطوة ←</button>
     </div>
 
     <!-- ============ 3) بصمة الجهاز (WebAuthn) ============ -->
@@ -539,8 +564,10 @@
           <b>هذا الجهاز لا يدعم بصمة WebAuthn.</b>
           <span id="wa-unsupported-reason"></span>
         </div>
-        <button class="btn-main btn-secondary" onclick="skipFactor('webauthn')">متابعة بدون هذا العامل</button>
+        <button class="btn-main btn-secondary" onclick="skipStep('webauthn', true)">متابعة بدون هذا العامل</button>
       </div>
+
+      <button class="btn-skip skip-control" onclick="skipStep('webauthn')">تخطّي هذه الخطوة ←</button>
     </div>
 
     <!-- ============ 4-أ) شاشة الموافقة الصريحة ============ -->
@@ -561,7 +588,11 @@
         <span>أوافق صراحةً على تشغيل الكاميرا ومعالجة صورتي محلياً على هذا الجهاز.</span>
       </label>
       <button class="btn-main" id="consent-btn" onclick="giveConsent()" disabled>أوافق ومتابعة</button>
-      <button class="btn-main btn-danger" onclick="refuseConsent()">أرفض</button>
+      <button class="btn-main btn-danger" onclick="refuseConsent()">أرفض وأوقف العملية</button>
+
+      <button class="btn-skip skip-control" onclick="skipStep('consent')">
+        تخطّي الكاميرا كلياً والانتقال للنهاية ←
+      </button>
     </div>
 
     <!-- ============ 4-ب) بوابة الوجه ============ -->
@@ -581,6 +612,8 @@
         <input type="file" id="face-photo-input" accept="image/*" capture="user" hidden onchange="onFacePhoto(this)">
         <button class="btn-main btn-secondary" onclick="startFaceCamera()">إعادة محاولة تشغيل الكاميرا</button>
       </div>
+
+      <button class="btn-skip skip-control" onclick="skipStep('face')">تخطّي هذه الخطوة ←</button>
     </div>
 
     <!-- ============ 5) العنصر الحي Coffee / Mouse ============ -->
@@ -600,6 +633,8 @@
         <input type="file" id="photo-input" accept="image/*" capture="environment" hidden onchange="onFallbackPhoto(this)">
         <button class="btn-main btn-secondary" onclick="startCamera()">إعادة محاولة تشغيل الكاميرا المباشرة</button>
       </div>
+
+      <button class="btn-skip skip-control" onclick="skipStep('scan')">تخطّي هذه الخطوة ←</button>
     </div>
 
     <!-- ============ 6) نجاح ============ -->
@@ -670,6 +705,10 @@
   const MODEL_URL = "./";               // مكان model.json و metadata.json و weights.bin
   const VAULT_PAGE = "vault.html";      // الصفحة الداخلية بعد نجاح التحقق
 
+  // السماح بتخطّي أي خطوة يدوياً. مفيد للعرض والتجربة على جهاز تنقصه بعض
+  // الإمكانات. اجعلها false لإلزام المستخدم باجتياز كل العوامل.
+  const ALLOW_SKIP = true;
+
   // بوابة الوجه
   const FACE_API_SRC = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
   const FACE_MODEL_URL = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
@@ -705,6 +744,7 @@
   let currentUser = "";
   let currentStep = "auth";
   let doneSteps = [];
+  let skippedSteps = [];
   let factorResults = {};   // ملخّص يظهر في نهاية العملية
   let videoStream = null;
   let model = null, modelPromise = null;
@@ -891,13 +931,16 @@
     wrap.innerHTML = "";
     STEPS.forEach((s, i) => {
       const div = document.createElement("div");
+      const isDone = doneSteps.indexOf(s.key) !== -1;
+      const isSkipped = skippedSteps.indexOf(s.key) !== -1;
       div.className = "step-dot";
-      if (doneSteps.indexOf(s.key) !== -1) div.className += " done";
+      if (isDone) div.className += " done";
+      else if (isSkipped) div.className += " skipped";
       if (s.key === currentStep || (currentStep === "consent" && s.key === "face")) {
         div.className += " active";
       }
       const icon = document.createElement("i");
-      icon.textContent = doneSteps.indexOf(s.key) !== -1 ? "✓" : String(i + 1);
+      icon.textContent = isDone ? "✓" : (isSkipped ? "–" : String(i + 1));
       const label = document.createElement("span");
       label.textContent = s.label;
       div.append(icon, label);
@@ -927,13 +970,40 @@
                    : "var(--text-color)";
   }
 
-  // تخطّي عامل غير مدعوم على هذا الجهاز (يُسجَّل في السجل بوضوح)
-  function skipFactor(key) {
-    factorResults[key] = "غير مدعوم على هذا الجهاز";
-    addLog(key, false, "تم تخطّي العامل لأن الجهاز لا يدعمه");
-    setStatus("تم تخطّي هذا العامل لأن الجهاز لا يدعمه", "orange");
+  // تخطّي خطوة. auto يعني أن الجهاز لا يدعم العامل، وإلا فهو تخطٍّ يدوي.
+  // كل تخطٍّ يُسجَّل ويظهر في ملخّص النهاية حتى يبقى الأمر واضحاً.
+  function skipStep(key, auto) {
+    if (!ALLOW_SKIP && !auto) return;
+    stopCamera();
+
+    const label = auto ? "غير مدعوم على هذا الجهاز" : "تم التخطّي";
+    const logMsg = auto
+      ? "تم تخطّي العامل لأن الجهاز لا يدعمه"
+      : "تخطّى المستخدم هذه الخطوة يدوياً";
+
+    factorResults[key] = label;
+    if (skippedSteps.indexOf(key) === -1) skippedSteps.push(key);
+    addLog(key, false, logMsg);
+
+    // لا كاميرا بلا موافقة، فتخطّي الموافقة يتخطّى ما يعتمد عليها
+    if (key === "consent") {
+      ["face", "scan"].forEach(k => {
+        factorResults[k] = "تم التخطّي";
+        if (skippedSteps.indexOf(k) === -1) skippedSteps.push(k);
+        addLog(k, false, "تخطٍّ تلقائي لأن الموافقة على الكاميرا لم تُمنح");
+      });
+      renderSteps();
+      setStatus("تم تخطّي الكاميرا وما يعتمد عليها", "orange");
+      return showDone();
+    }
+
+    renderSteps();
+    setStatus(auto ? "تم تخطّي هذا العامل لأن الجهاز لا يدعمه" : "تم تخطّي هذه الخطوة", "orange");
     nextAfter(key);
   }
+
+  // اسم قديم محتفظ به للتوافق
+  function skipFactor(key) { skipStep(key, true); }
 
   // ترتيب الخطوات
   function nextAfter(key) {
@@ -1027,6 +1097,7 @@
     addLog("auth", true, "تسجيل دخول ناجح");
     factorResults = { auth: "كلمة مرور صحيحة" };
     doneSteps = [];
+    skippedSteps = [];
     markDone("auth");
     document.getElementById("password").value = "";
     startTotp();
@@ -1339,6 +1410,7 @@
     stopCamera();
     currentUser = "";
     doneSteps = [];
+    skippedSteps = [];
     showStep("auth");
     setStatus("تم إيقاف العملية لأنك لم توافق على تشغيل الكاميرا", "red");
   }
@@ -1661,18 +1733,34 @@
       scan: "العنصر الحي"
     };
     const box = document.getElementById("factors-summary");
-    box.innerHTML = "<b>العوامل التي تم اجتيازها:</b>";
+    box.className = skippedSteps.length ? "box warn" : "box";
+    box.innerHTML = "<b>نتيجة العوامل:</b>";
     const ul = document.createElement("ul");
     ["auth", "totp", "webauthn", "consent", "face", "scan"].forEach(k => {
       if (!factorResults[k]) return;
       const li = document.createElement("li");
-      li.textContent = names[k] + ": " + factorResults[k];
+      const skipped = skippedSteps.indexOf(k) !== -1;
+      li.textContent = (skipped ? "⚠ " : "✓ ") + names[k] + ": " + factorResults[k];
+      if (skipped) li.style.color = "var(--warn)";
       ul.appendChild(li);
     });
     box.appendChild(ul);
 
-    addLog("done", true, "اكتمل التحقق ودخول المستخدم");
-    setStatus("اكتمل التحقق بنجاح ✅ مرحباً " + currentUser, "green");
+    if (skippedSteps.length) {
+      const warn = document.createElement("div");
+      warn.style.cssText = "margin-top:10px;font-weight:bold;";
+      warn.textContent = "تنبيه: تم تخطّي " + skippedSteps.length +
+        " من العوامل، فالتحقّق غير مكتمل.";
+      box.appendChild(warn);
+    }
+
+    if (skippedSteps.length) {
+      addLog("done", true, "دخول المستخدم مع تخطّي " + skippedSteps.length + " من العوامل");
+      setStatus("تم الدخول مع تخطّي بعض العوامل ⚠ مرحباً " + currentUser, "orange");
+    } else {
+      addLog("done", true, "اكتمل التحقق ودخول المستخدم");
+      setStatus("اكتمل التحقق بنجاح ✅ مرحباً " + currentUser, "green");
+    }
   }
 
   function markVerified() {
@@ -1934,6 +2022,11 @@
 
     if (!window.isSecureContext) {
       document.getElementById("insecure-banner").hidden = false;
+    }
+
+    // إخفاء أزرار التخطّي إذا عُطّلت من الإعدادات
+    if (!ALLOW_SKIP) {
+      document.querySelectorAll(".skip-control").forEach(el => { el.hidden = true; });
     }
 
     // Enter داخل الحقول
