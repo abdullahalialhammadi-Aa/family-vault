@@ -1,5 +1,7 @@
 # الذاكرة الرقمية للأجيال — Family Vault
 
+[![CI](https://github.com/abdullahalialhammadi-Aa/family-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/abdullahalialhammadi-Aa/family-vault/actions/workflows/ci.yml)
+
 تطبيق ويب يتيح محادثة شخصيات افتراضية من أجيال مختلفة لاستعادة ذكريات الماضي،
 محميّ بـ **بوابة تحقّق ثلاثية** تعمل بالكامل داخل متصفّح المستخدم.
 
