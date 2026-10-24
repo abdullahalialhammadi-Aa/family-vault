@@ -232,12 +232,17 @@ try {
 
   /* ---------- 5) بصمة الجهاز بلا مستشعر ---------- */
   r = await B.evaluate(`
+    await new Promise(r => setTimeout(r, 300));
     return {
-      unsupportedShown: !document.getElementById('wa-unsupported').hidden,
-      registerHidden: document.getElementById('wa-register').hidden
+      step: currentStep,
+      registerHidden: document.getElementById('wa-register').hidden,
+      autoPassed: autoPassed.slice(),
+      logged: readLog().some(e => e.step === 'webauthn' && e.msg === 'تم تخطي بصمة الجهاز: غير مدعوم' && e.ok === false)
     };`);
-  t.check('رسالة عدم الدعم تظهر بلا مستشعر', r.unsupportedShown, true);
+  t.check('بلا مستشعر تُجتاز البصمة تلقائياً للموافقة', r.step, 'consent');
   t.check('زر التسجيل مخفي بلا مستشعر', r.registerHidden, true);
+  t.check('تسجيل الاجتياز التلقائي', r.autoPassed, ['webauthn']);
+  t.check('السجل يوثّق عدم دعم البصمة', r.logged, true);
 
   /* ---------- 6) بصمة الجهاز مع مستشعر افتراضي ---------- */
   await B.send('WebAuthn.enable', { enableUI: false });
@@ -522,8 +527,18 @@ try {
     out.afterAutoSkip = currentStep;
     out.skipped = skippedSteps.length;
     out.buttonsHidden = Array.from(document.querySelectorAll('.skip-control')).every(el => el.hidden);
+    skipStep('webauthn');
+    out.afterVoluntaryWaSkip = currentStep;
     showDone();
     out.afterForcedDone = currentStep;
+    // اجتياز البصمة تلقائياً لا يكفي وحده لإكمال البوابة
+    autoPassed = ['webauthn'];
+    out.gateWithOnlyAuto = gateComplete();
+    doneSteps = ['auth', 'totp', 'face', 'scan'];
+    out.gateWithAutoWa = gateComplete();
+    autoPassed = [];
+    out.gateWithoutWa = gateComplete();
+    doneSteps = ['auth'];
     return out;`);
   t.check('الدخول يبدأ من خطوة TOTP', r.afterLogin, 'totp');
   t.check('رفض تخطّي TOTP', r.afterTotpSkip, 'totp');
@@ -532,6 +547,10 @@ try {
   t.check('لا خطوات متخطّاة', r.skipped, 0);
   t.check('أزرار التخطّي مخفية', r.buttonsHidden, true);
   t.check('لا يمكن فرض شاشة النجاح قبل اكتمال الخطوات', r.afterForcedDone, 'totp');
+  t.check('رفض التخطّي اليدوي للبصمة', r.afterVoluntaryWaSkip, 'totp');
+  t.check('الاجتياز التلقائي وحده لا يكمل البوابة', r.gateWithOnlyAuto, false);
+  t.check('بقية الخطوات مع بصمة غير مدعومة تكمل البوابة', r.gateWithAutoWa, true);
+  t.check('بلا بصمة ولا عدم دعم لا تكتمل البوابة', r.gateWithoutWa, false);
 
   /* ---------- 14) حماية الصفحة الداخلية ---------- */
   await B.goto(server.url + '/vault.html');

@@ -21,7 +21,31 @@ echo "1/4  تشغيل الفحوص السريعة..."
 npm run --silent test
 
 echo "2/4  إنشاء الالتزام..."
-git add -A
+# لا نضيف كل شيء بلا تمييز: فقط تعديلات الملفات المتتبَّعة أصلاً،
+# ثم المسارات المعروفة للمشروع إن وُجدت فيها ملفات جديدة.
+git add -u
+KNOWN_PATHS="index.html vault.html README.md package.json model.json metadata.json weights.bin .htaccess .gitignore tests scripts .githooks .github"
+for p in $KNOWN_PATHS; do
+  [ -e "$p" ] && git add -- "$p"
+done
+
+# أي ملف جديد خارج المسارات المعروفة لا يُرفع تلقائياً: نعرضه ونتوقف
+UNKNOWN="$(git ls-files --others --exclude-standard)"
+if [ -n "$UNKNOWN" ]; then
+  echo ""
+  echo "توجد ملفات جديدة غير مضافة (خارج المسارات المعروفة):"
+  echo "$UNKNOWN" | sed 's/^/   /'
+  echo "راجعها: أضف المطلوب منها يدوياً بـ git add <الملف> أو احذفه، ثم أعد التشغيل."
+  git reset -q
+  exit 1
+fi
+
+echo "الملفات التي ستُرفع:"
+git diff --cached --name-status | sed 's/^/   /'
+if git diff --cached --quiet; then
+  echo "لا توجد تعديلات للرفع."
+  exit 0
+fi
 git commit -q -m "$MSG"
 
 echo "3/4  جلب آخر تحديثات من GitHub..."

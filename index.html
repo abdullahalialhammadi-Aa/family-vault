@@ -564,7 +564,7 @@
           <b>هذا الجهاز لا يدعم بصمة WebAuthn.</b>
           <span id="wa-unsupported-reason"></span>
         </div>
-        <button class="btn-main btn-secondary skip-control" onclick="skipStep('webauthn', true)">متابعة بدون هذا العامل</button>
+        <p class="hint">سيُتجاوز هذا العامل تلقائياً ويُسجَّل ذلك في سجل المحاولات.</p>
       </div>
 
       <button class="btn-skip skip-control" onclick="skipStep('webauthn')">تخطّي هذه الخطوة ←</button>
@@ -753,6 +753,7 @@
   let currentStep = "auth";
   let doneSteps = [];
   let skippedSteps = [];
+  let autoPassed = [];      // خطوات اجتيزت تلقائياً لأن الجهاز لا يدعمها (بصمة الجهاز فقط)
   let factorResults = {};   // ملخّص يظهر في نهاية العملية
   let videoStream = null;
   let model = null, modelPromise = null;
@@ -1018,6 +1019,8 @@
 
   function markDone(key) {
     if (doneSteps.indexOf(key) === -1) doneSteps.push(key);
+    skippedSteps = skippedSteps.filter(k => k !== key);
+    autoPassed = autoPassed.filter(k => k !== key);
     renderSteps();
   }
 
@@ -1174,6 +1177,7 @@
     factorResults = { auth: "كلمة مرور صحيحة" };
     doneSteps = [];
     skippedSteps = [];
+    autoPassed = [];
     markDone("auth");
     document.getElementById("password").value = "";
     startTotp();
@@ -1292,8 +1296,8 @@
     document.getElementById("wa-unsupported").hidden = true;
 
     // فحص الدعم: يحتاج HTTPS + مستشعر مدمج في الجهاز
-    if (!window.PublicKeyCredential || !navigator.credentials) {
-      return showWaUnsupported("المتصفح لا يوفّر واجهة WebAuthn.");
+    if (typeof window.PublicKeyCredential === "undefined" || !navigator.credentials) {
+      return passWebauthnUnsupported("المتصفح لا يوفّر واجهة WebAuthn.");
     }
     if (!window.isSecureContext) {
       return showWaUnsupported("الصفحة مفتوحة بدون HTTPS، وبصمة الجهاز لا تعمل بدونه.");
@@ -1306,7 +1310,7 @@
       available = false;
     }
     if (!available && !sec.webauthnId) {
-      return showWaUnsupported("لا يوجد مستشعر بصمة أو تعرّف وجه مفعّل في هذا الجهاز.");
+      return passWebauthnUnsupported("لا يوجد مستشعر بصمة أو تعرّف وجه مفعّل في هذا الجهاز.");
     }
 
     if (sec.webauthnId) {
@@ -1316,6 +1320,20 @@
       document.getElementById("wa-register").hidden = false;
       setStatus("سجّل بصمة هذا الجهاز لمرة واحدة", "orange");
     }
+  }
+
+  // الحالة الوحيدة المسموح فيها بتجاوز خطوة: جهاز لا يدعم بصمة الجهاز إطلاقاً.
+  // تُجتاز تلقائياً وتُسجَّل في السجل، ولا يوجد أي تخطٍّ يدوي.
+  function passWebauthnUnsupported(reason) {
+    document.getElementById("wa-unsupported").hidden = false;
+    document.getElementById("wa-unsupported-reason").textContent = reason;
+    factorResults.webauthn = "غير مدعوم على هذا الجهاز";
+    if (autoPassed.indexOf("webauthn") === -1) autoPassed.push("webauthn");
+    if (skippedSteps.indexOf("webauthn") === -1) skippedSteps.push("webauthn");
+    addLog("webauthn", false, "تم تخطي بصمة الجهاز: غير مدعوم");
+    renderSteps();
+    setStatus("تم تخطي بصمة الجهاز: غير مدعوم على هذا الجهاز", "orange");
+    startConsent();
   }
 
   function showWaUnsupported(reason) {
@@ -1487,6 +1505,7 @@
     currentUser = "";
     doneSteps = [];
     skippedSteps = [];
+    autoPassed = [];
     showStep("auth");
     setStatus("تم إيقاف العملية لأنك لم توافق على تشغيل الكاميرا", "red");
   }
@@ -1797,7 +1816,8 @@
      ================================================================ */
   // هل اجتاز المستخدم كل الخطوات الخمس فعلاً؟
   function gateComplete() {
-    return STEPS.every(s => doneSteps.indexOf(s.key) !== -1);
+    return STEPS.every(s => doneSteps.indexOf(s.key) !== -1 ||
+      (s.key === "webauthn" && autoPassed.indexOf("webauthn") !== -1));
   }
 
   function showDone() {
