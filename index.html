@@ -564,7 +564,7 @@
           <b>هذا الجهاز لا يدعم بصمة WebAuthn.</b>
           <span id="wa-unsupported-reason"></span>
         </div>
-        <button class="btn-main btn-secondary" onclick="skipStep('webauthn', true)">متابعة بدون هذا العامل</button>
+        <button class="btn-main btn-secondary skip-control" onclick="skipStep('webauthn', true)">متابعة بدون هذا العامل</button>
       </div>
 
       <button class="btn-skip skip-control" onclick="skipStep('webauthn')">تخطّي هذه الخطوة ←</button>
@@ -694,10 +694,7 @@
      الإعدادات: عدّل من هنا فقط
      ================================================================ */
 
-  // حسابات ثابتة جاهزة بالصيغة  "اسم المستخدم": "كلمة المرور"
-  const USERS = {
-    "admin": "1234"
-  };
+  // لا توجد حسابات مدمجة: كل مستخدم يُنشئ حسابه من تبويب "إنشاء حساب".
 
   // الفئات المقبولة من نموذج Teachable Machine (كما في metadata.json)
   const ALLOWED_LABELS = ["COFFEE", "MOUSE"];
@@ -705,9 +702,20 @@
   const MODEL_URL = "./";               // مكان model.json و metadata.json و weights.bin
   const VAULT_PAGE = "vault.html";      // الصفحة الداخلية بعد نجاح التحقق
 
-  // السماح بتخطّي أي خطوة يدوياً. مفيد للعرض والتجربة على جهاز تنقصه بعض
-  // الإمكانات. اجعلها false لإلزام المستخدم باجتياز كل العوامل.
-  const ALLOW_SKIP = true;
+  // السماح بتخطّي أي خطوة. معطّل: يجب اجتياز الخطوات الخمس كلها قبل الدخول.
+  // (true للعرض والتجربة فقط على جهاز تنقصه بعض الإمكانات)
+  const ALLOW_SKIP = false;
+
+  // صلاحية ختم الجلسة بعد اكتمال التحقق (بالدقائق)
+  const SESSION_MINUTES = 60;
+
+  // اسم المستخدم: 3 إلى 30 حرفاً من الحروف (ومنها العربية) والأرقام و _ . - فقط
+  const USERNAME_RE = /^[\p{L}\p{Nd}_.\-]{3,30}$/u;
+  const RESERVED_NAMES = ["__proto__", "constructor", "prototype"];
+
+  // تجزئة كلمة المرور
+  const PBKDF2_ITERATIONS = 100000;
+  const NO_CRYPTO_MSG = "هذا المتصفح لا يدعم التشفير الآمن (Web Crypto)، لذلك لا يمكن إنشاء حساب أو تسجيل الدخول. افتح الموقع عبر https في متصفح حديث.";
 
   // بوابة الوجه
   const FACE_API_SRC = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
@@ -818,15 +826,67 @@
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
+  function hasCrypto() {
+    return !!(window.crypto && window.crypto.subtle && window.crypto.getRandomValues);
+  }
+
+  function bytesToHex(bytes) {
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function hexToBytes(hex) {
+    const out = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  }
+
+  async function pbkdf2Hex(password, saltBytes, iterations) {
+    const key = await crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: iterations }, key, 256
+    );
+    return bytesToHex(new Uint8Array(bits));
+  }
+
+  // الصيغة المخزّنة:  pbkdf2:<التكرارات>:<الملح hex>:<الناتج hex>
   async function hashPassword(password) {
-    if (window.crypto && crypto.subtle) return "sha256:" + await sha256Hex(password);
-    return "plain:" + password;
+    if (!hasCrypto()) throw new Error(NO_CRYPTO_MSG);
+    const salt = new Uint8Array(16);
+    crypto.getRandomValues(salt);
+    const hash = await pbkdf2Hex(password, salt, PBKDF2_ITERATIONS);
+    return "pbkdf2:" + PBKDF2_ITERATIONS + ":" + bytesToHex(salt) + ":" + hash;
+  }
+
+  // مقارنة بزمن ثابت تقريباً
+  function safeEqual(a, b) {
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return diff === 0;
+  }
+
+  // يُرجع { ok, legacy }. legacy تعني أن التجزئة قديمة ويجب ترقيتها بعد النجاح.
+  async function checkPassword(stored, password) {
+    if (!stored || !hasCrypto()) return { ok: false, legacy: false };
+    if (stored.indexOf("pbkdf2:") === 0) {
+      const parts = stored.split(":");
+      const iter = parseInt(parts[1], 10);
+      if (parts.length !== 4 || !iter || !/^[0-9a-f]+$/.test(parts[2])) return { ok: false, legacy: false };
+      const hash = await pbkdf2Hex(password, hexToBytes(parts[2]), iter);
+      return { ok: safeEqual(hash, parts[3]), legacy: iter < PBKDF2_ITERATIONS };
+    }
+    // حسابات قديمة: SHA-256 بلا ملح، تُرقّى تلقائياً بعد أول دخول ناجح
+    if (stored.indexOf("sha256:") === 0) {
+      return { ok: safeEqual("sha256:" + await sha256Hex(password), stored), legacy: true };
+    }
+    // أي صيغة أخرى (ومنها النص الصريح القديم) مرفوضة
+    return { ok: false, legacy: false };
   }
 
   async function passwordMatches(stored, password) {
-    if (!stored) return false;
-    if (stored.indexOf("plain:") === 0) return stored === "plain:" + password;
-    return stored === await hashPassword(password);
+    return (await checkPassword(stored, password)).ok;
   }
 
   const B32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -973,7 +1033,11 @@
   // تخطّي خطوة. auto يعني أن الجهاز لا يدعم العامل، وإلا فهو تخطٍّ يدوي.
   // كل تخطٍّ يُسجَّل ويظهر في ملخّص النهاية حتى يبقى الأمر واضحاً.
   function skipStep(key, auto) {
-    if (!ALLOW_SKIP && !auto) return;
+    // عند تعطيل التخطّي لا يمكن تجاوز أي خطوة، ولا حتى بحجّة عدم دعم الجهاز
+    if (!ALLOW_SKIP) {
+      setStatus("لا يمكن تخطّي هذه الخطوة: يجب اجتياز كل خطوات التحقق الخمس", "red");
+      return;
+    }
     stopCamera();
 
     const label = auto ? "غير مدعوم على هذا الجهاز" : "تم التخطّي";
@@ -1036,12 +1100,17 @@
     const pass = document.getElementById("reg-password").value;
     const confirm = document.getElementById("reg-confirm").value;
 
+    if (!hasCrypto()) return setStatus(NO_CRYPTO_MSG, "red");
     if (user.length < 3) return setStatus("اسم المستخدم يجب أن يكون 3 أحرف على الأقل", "red");
+    if (user.length > 30) return setStatus("اسم المستخدم يجب ألا يزيد على 30 حرفاً", "red");
+    if (!USERNAME_RE.test(user) || RESERVED_NAMES.indexOf(user.toLowerCase()) !== -1) {
+      return setStatus("اسم المستخدم يقبل الحروف (ومنها العربية) والأرقام و _ . - فقط", "red");
+    }
     if (pass.length < 4) return setStatus("كلمة المرور يجب أن تكون 4 أحرف على الأقل", "red");
     if (pass !== confirm) return setStatus("كلمتا المرور غير متطابقتين", "red");
 
     const accounts = loadAccounts();
-    if (findUserKey(USERS, user) || findUserKey(accounts, user)) {
+    if (findUserKey(accounts, user)) {
       return setStatus("اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر", "red");
     }
 
@@ -1052,6 +1121,8 @@
       if (!saveAccounts(accounts)) {
         return setStatus("المتصفح لا يسمح بحفظ الحسابات على هذا الجهاز", "red");
       }
+    } catch (e) {
+      return setStatus(NO_CRYPTO_MSG, "red");
     } finally {
       btn.disabled = false;
     }
@@ -1072,18 +1143,23 @@
     const pass = document.getElementById("password").value;
 
     if (!user || !pass) return setStatus("يرجى إدخال اسم المستخدم وكلمة المرور", "red");
+    if (!hasCrypto()) return setStatus(NO_CRYPTO_MSG, "red");
 
     let ok = false, displayName = user;
-    const builtinKey = findUserKey(USERS, user);
-    if (builtinKey && USERS[builtinKey] === pass) {
-      ok = true;
-      displayName = builtinKey;
-    } else {
-      const accounts = loadAccounts();
-      const key = findUserKey(accounts, user);
-      if (key) {
-        ok = await passwordMatches(accounts[key].hash, pass);
-        displayName = key;
+    const accounts = loadAccounts();
+    const key = findUserKey(accounts, user);
+    if (key) {
+      let res = { ok: false, legacy: false };
+      try { res = await checkPassword(accounts[key].hash, pass); } catch (e) {}
+      ok = res.ok;
+      displayName = key;
+      // ترقية التجزئة القديمة إلى PBKDF2 بملح عشوائي بعد الدخول الناجح
+      if (ok && res.legacy) {
+        try {
+          accounts[key].hash = await hashPassword(pass);
+          accounts[key].upgradedAt = new Date().toISOString();
+          saveAccounts(accounts);
+        } catch (e) {}
       }
     }
 
@@ -1488,7 +1564,7 @@
     const sec = getSecurity(currentUser);
     const enrolled = Array.isArray(sec.faceDescriptor) && sec.faceDescriptor.length === 128;
 
-    document.getElementById("face-hint").innerHTML = enrolled
+    document.getElementById("face-hint").textContent = enrolled
       ? "ضع وجهك داخل الإطار في إضاءة جيدة، وسنقارنه بالواصف المحفوظ على هذا الجهاز."
       : "أول مرة: سنأخذ واصفاً رقمياً لوجهك (وليس صورة) لاستخدامه في عمليات الدخول القادمة.";
     document.getElementById("face-btn").textContent = enrolled ? "تحقّق من وجهي" : "تسجيل واصف وجهي";
@@ -1719,8 +1795,18 @@
   /* ================================================================
      6) النجاح والدخول
      ================================================================ */
+  // هل اجتاز المستخدم كل الخطوات الخمس فعلاً؟
+  function gateComplete() {
+    return STEPS.every(s => doneSteps.indexOf(s.key) !== -1);
+  }
+
   function showDone() {
     stopCamera();
+    if (!ALLOW_SKIP && (!currentUser || !gateComplete())) {
+      addLog("done", false, "محاولة إنهاء التحقق قبل اجتياز كل الخطوات");
+      setStatus("لم تكتمل خطوات التحقق الخمس، لا يمكن الدخول", "red");
+      return;
+    }
     markVerified();
     showStep("done");
 
@@ -1763,15 +1849,26 @@
     }
   }
 
+  // ختم الجلسة: مرتبط باسم المستخدم وله وقت انتهاء (فحص داخل المتصفح فقط)
   function markVerified() {
+    if (!currentUser) return false;
+    if (!ALLOW_SKIP && !gateComplete()) return false;
     try {
-      sessionStorage.setItem("fv_verified", "1");
+      sessionStorage.setItem("fv_verified", JSON.stringify({
+        u: currentUser,
+        exp: Date.now() + SESSION_MINUTES * 60 * 1000
+      }));
       sessionStorage.setItem("fv_user", currentUser);
-    } catch (e) {}
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function enterVault() {
-    markVerified();
+    if (!markVerified()) {
+      return setStatus("تعذّر بدء الجلسة: أكمل خطوات التحقق أولاً", "red");
+    }
     location.href = VAULT_PAGE;
   }
 
@@ -1882,9 +1979,12 @@
         const div = document.createElement("div");
         div.className = "log-item " + (item.ok ? "ok" : "fail");
         const head = document.createElement("div");
-        head.innerHTML = '<span class="who">' + (item.user || "—") + "</span> · " +
-                         (STEP_NAMES[item.step] || item.step) + " · " +
-                         (item.ok ? "نجاح ✅" : "فشل ❌");
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = String(item.user || "—");
+        head.append(who, document.createTextNode(" · " +
+          String(STEP_NAMES[item.step] || item.step || "") + " · " +
+          (item.ok ? "نجاح ✅" : "فشل ❌")));
         const msg = document.createElement("div");
         msg.textContent = item.msg;
         const meta = document.createElement("div");

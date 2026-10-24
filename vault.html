@@ -7,14 +7,26 @@
 
   <!-- حماية الصفحة: لا تُفتح إلا بعد تسجيل الدخول والتحقق الحي من index.html -->
   <script>
+    // ختم الجلسة يجب أن يكون مرتبطاً بنفس اسم المستخدم وغير منتهي الصلاحية.
+    // أي خطأ (تخزين محجوب، بيانات تالفة) يعني الرفض والعودة لصفحة الدخول.
     (function () {
-      var verified = true;
+      var verified = false;
       try {
-        verified = sessionStorage.getItem('fv_verified') === '1';
+        var raw = sessionStorage.getItem('fv_verified');
+        var user = sessionStorage.getItem('fv_user') || '';
+        var seal = raw ? JSON.parse(raw) : null;
+        verified = !!(seal && typeof seal === 'object' &&
+                      typeof seal.u === 'string' && seal.u !== '' && seal.u === user &&
+                      typeof seal.exp === 'number' && seal.exp > Date.now());
+        if (!verified) {
+          sessionStorage.removeItem('fv_verified');
+          sessionStorage.removeItem('fv_user');
+        }
       } catch (e) {
-        verified = true; // إذا كان المتصفح يمنع التخزين نسمح بالعرض بدل حجب الصفحة
+        verified = false;
       }
       if (!verified) {
+        document.documentElement.style.display = 'none';
         location.replace('index.html');
       }
     })();
@@ -223,6 +235,22 @@
       object-fit: cover;
       border: 2px solid var(--primary-color);
     }
+
+    .chat-header > div { flex: 1 1 auto; min-width: 0; }
+
+    .clear-chat-btn {
+      flex: 0 0 auto;
+      background: #fff;
+      color: #9a3b2b;
+      border: 1px solid #e0b8ad;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 0.75em;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .clear-chat-btn:hover { background: #fbeeea; }
 
     .chat-header h3 {
       margin: 0;
@@ -469,6 +497,7 @@
           <h3 id="activeName"></h3>
           <span><i class="online-dot"></i><span id="activeTopic"></span></span>
         </div>
+        <button type="button" class="clear-chat-btn" id="clearChatBtn" onclick="clearChat()">مسح المحادثة</button>
       </div>
 
       <div class="messages" id="chatBox"></div>
@@ -553,6 +582,38 @@
 
     let currentSimKey = "diving";
     let typingTimer = null;
+    let currentUser = '';
+
+    // حفظ المحادثة لكل مستخدم في هذا المتصفح فقط
+    const CHAT_PREFIX = 'fv_chat_';
+    const CHAT_MAX = 200;
+
+    function chatKey() { return CHAT_PREFIX + currentUser; }
+
+    function loadChat() {
+      if (!currentUser) return [];
+      try {
+        const list = JSON.parse(localStorage.getItem(chatKey()));
+        return Array.isArray(list) ? list : [];
+      } catch (e) { return []; }
+    }
+
+    function saveChat(list) {
+      if (!currentUser) return;
+      try { localStorage.setItem(chatKey(), JSON.stringify(list.slice(-CHAT_MAX))); } catch (e) {}
+    }
+
+    function recordMessage(text, who) {
+      const list = loadChat();
+      list.push({ sim: currentSimKey, who: who, text: String(text), t: Date.now() });
+      saveChat(list);
+    }
+
+    function clearChat() {
+      if (!confirm('مسح كل المحادثات المحفوظة لهذا الحساب على هذا الجهاز؟')) return;
+      try { localStorage.removeItem(chatKey()); } catch (e) {}
+      selectSimulator(currentSimKey);
+    }
 
     // نطاق التشكيل العربي (الفتحة إلى السكون) لإزالته قبل المطابقة
     const DIACRITICS = new RegExp('[' + String.fromCharCode(0x064B) + '-' + String.fromCharCode(0x0652) + ']', 'g');
@@ -561,6 +622,7 @@
       // عرض اسم المستخدم القادم من صفحة الدخول
       let user = '';
       try { user = sessionStorage.getItem('fv_user') || ''; } catch (e) {}
+      currentUser = user;
       document.getElementById('welcomeUser').innerText = user ? 'مرحباً ' + user : 'مرحباً بك';
 
       renderPersonas();
@@ -617,8 +679,12 @@
       document.getElementById('activeImg').src = sim.image;
 
       clearTimeout(typingTimer);
-      document.getElementById('chatBox').innerHTML = '';
+      document.getElementById('chatBox').textContent = '';
       addMessage(sim.welcome, 'bot');
+      // استعادة المحادثة المحفوظة مع هذه الشخصية
+      loadChat().forEach(m => {
+        if (m && m.sim === key && (m.who === 'user' || m.who === 'bot')) addMessage(m.text, m.who);
+      });
       renderChips(sim);
 
       // على الهاتف: نحرّك شريط الشخصيات حتى تظهر الشخصية المختارة
@@ -681,6 +747,7 @@
       if (!rawInput) return;
 
       addMessage(rawInput, 'user');
+      recordMessage(rawInput, 'user');
       inputEl.value = '';
 
       const cleanInput = normalizeText(rawInput);
@@ -698,6 +765,8 @@
         }
       }
 
+      // نحفظ الرد فوراً حتى لا يضيع إذا غادر المستخدم أثناء "يكتب..."
+      recordMessage(foundResponse, 'bot');
       showTyping();
       clearTimeout(typingTimer);
       typingTimer = setTimeout(() => {

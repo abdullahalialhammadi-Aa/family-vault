@@ -135,12 +135,22 @@ try {
     await register(); out.shortPass = ${status()};
     set('reg-username','tester'); set('reg-password','pass1234'); set('reg-confirm','nope');
     await register(); out.mismatch = ${status()};
-    set('reg-username','Admin'); set('reg-password','pass1234'); set('reg-confirm','pass1234');
-    await register(); out.duplicate = ${status()};
+    set('reg-username','<img src=x onerror=alert(1)>'); set('reg-password','pass1234'); set('reg-confirm','pass1234');
+    await register(); out.badChars = ${status()};
+    set('reg-username','a'.repeat(31)); set('reg-password','pass1234'); set('reg-confirm','pass1234');
+    await register(); out.longUser = ${status()};
+    set('reg-username','admin'); set('reg-password','1234'); set('reg-confirm','1234');
+    out.noBuiltin = !(await (async () => { document.getElementById('username').value='admin'; document.getElementById('password').value='1234'; await login(); return currentStep !== 'auth'; })());
+    switchAuthMode('register');
     set('reg-username','tester'); set('reg-password','pass1234'); set('reg-confirm','pass1234');
     await register(); out.success = ${status()};
     const stored = JSON.parse(localStorage.getItem('fv_accounts') || '{}').tester || {};
-    out.hashed = String(stored.hash || '').startsWith('sha256:');
+    out.hashed = /^pbkdf2:100000:[0-9a-f]{32}:[0-9a-f]{64}$/.test(String(stored.hash || ''));
+    switchAuthMode('register');
+    set('reg-username','TESTER'); set('reg-password','pass1234'); set('reg-confirm','pass1234');
+    await register(); out.duplicate = ${status()};
+    switchAuthMode('login');
+    document.getElementById('username').value = 'tester';
     out.plaintextAbsent = JSON.stringify(stored).indexOf('pass1234') === -1;
     out.prefilled = document.getElementById('username').value;
     return out;`);
@@ -148,10 +158,34 @@ try {
   t.check('رفض كلمة مرور قصيرة', /4 أحرف/.test(r.shortPass), true);
   t.check('رفض عدم تطابق كلمتي المرور', /غير متطابقتين/.test(r.mismatch), true);
   t.check('رفض اسم مستخدم مكرر', /مستخدم مسبقاً/.test(r.duplicate), true);
+  t.check('رفض رموز غير مسموحة في اسم المستخدم', /الحروف/.test(r.badChars), true);
+  t.check('رفض اسم مستخدم أطول من 30', /30/.test(r.longUser), true);
+  t.check('لا يوجد حساب مدمج admin', r.noBuiltin, true);
   t.check('نجاح إنشاء الحساب', /تم إنشاء الحساب بنجاح/.test(r.success), true);
-  t.check('كلمة المرور مخزّنة مشفّرة', r.hashed, true);
+  t.check('كلمة المرور مخزّنة بـ PBKDF2 وملح', r.hashed, true);
   t.check('كلمة المرور الأصلية غير مخزّنة', r.plaintextAbsent, true);
   t.check('اسم المستخدم معبّأ تلقائياً', r.prefilled, 'tester');
+
+  /* ---------- 2-ب) ترقية تجزئة SHA-256 القديمة ---------- */
+  r = await B.evaluate(`
+    const accts = JSON.parse(localStorage.getItem('fv_accounts') || '{}');
+    accts.legacy = { hash: 'sha256:' + await sha256Hex('oldpass1') };
+    localStorage.setItem('fv_accounts', JSON.stringify(accts));
+    document.getElementById('username').value = 'legacy';
+    document.getElementById('password').value = 'oldpass1';
+    await login();
+    const out = { step: currentStep };
+    out.upgraded = /^pbkdf2:/.test(JSON.parse(localStorage.getItem('fv_accounts')).legacy.hash);
+    out.stillWorks = await passwordMatches(JSON.parse(localStorage.getItem('fv_accounts')).legacy.hash, 'oldpass1');
+    const a2 = JSON.parse(localStorage.getItem('fv_accounts')); delete a2.legacy;
+    localStorage.setItem('fv_accounts', JSON.stringify(a2));
+    dropSecurity('legacy');
+    currentUser = ''; doneSteps = []; skippedSteps = []; factorResults = {};
+    showStep('auth');
+    return out;`);
+  t.check('قبول تجزئة SHA-256 القديمة', r.step, 'totp');
+  t.check('ترقية التجزئة القديمة إلى PBKDF2', r.upgraded, true);
+  t.check('كلمة المرور تعمل بعد الترقية', r.stillWorks, true);
 
   /* ---------- 3) تسجيل الدخول ---------- */
   r = await B.evaluate(`
@@ -410,12 +444,12 @@ try {
   r = await B.evaluate(`
     return {
       items: document.querySelectorAll('#factors-summary li').length,
-      verified: sessionStorage.getItem('fv_verified'),
+      verified: (() => { try { const v = JSON.parse(sessionStorage.getItem('fv_verified')); return v && v.u === 'tester' && v.exp > Date.now(); } catch (e) { return false; } })(),
       user: sessionStorage.getItem('fv_user'),
       continueVisible: !!document.getElementById('continue-btn').offsetParent
     };`);
   t.check('ملخّص العوامل يعرض ستة عناصر', r.items, 6);
-  t.check('ختم الجلسة بعد التحقّق', r.verified, '1');
+  t.check('ختم الجلسة مرتبط بالمستخدم وله صلاحية', r.verified, true);
   t.check('حفظ اسم المستخدم للجلسة', r.user, 'tester');
   t.check('ظهور زر المتابعة', r.continueVisible, true);
 
@@ -469,9 +503,8 @@ try {
   t.check('إعادة التسجيل بعد الحذف', r.factor, 'تم تسجيل واصف الوجه');
   t.check('طول الواصف الجديد 128', r.len, 128);
 
-  /* ---------- 13) تخطّي الخطوات ---------- */
+  /* ---------- 13) لا يمكن تخطّي الخطوات ---------- */
   r = await B.evaluate(`
-    logout === undefined;
     stopCamera();
     doneSteps = []; skippedSteps = []; factorResults = {};
     showStep('auth');
@@ -482,51 +515,23 @@ try {
     const out = { afterLogin: currentStep };
 
     skipStep('totp');
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 300));
     out.afterTotpSkip = currentStep;
-
-    skipStep('webauthn');
-    await new Promise(r => setTimeout(r, 400));
-    out.afterWaSkip = currentStep;
-
-    out.skippedSoFar = skippedSteps.slice();
-    out.dotsSkipped = document.querySelectorAll('.step-dot.skipped').length;
+    out.skipStatus = ${status()};
+    skipStep('consent', true);
+    out.afterAutoSkip = currentStep;
+    out.skipped = skippedSteps.length;
+    out.buttonsHidden = Array.from(document.querySelectorAll('.skip-control')).every(el => el.hidden);
+    showDone();
+    out.afterForcedDone = currentStep;
     return out;`);
   t.check('الدخول يبدأ من خطوة TOTP', r.afterLogin, 'totp');
-  t.check('تخطّي TOTP ينقل لبصمة الجهاز', r.afterTotpSkip, 'webauthn');
-  t.check('تخطّي البصمة ينقل للموافقة', r.afterWaSkip, 'consent');
-  t.check('تسجيل الخطوات المتخطّاة', r.skippedSoFar, ['totp', 'webauthn']);
-  t.check('المؤشّر يميّز الخطوات المتخطّاة', r.dotsSkipped, 2);
-
-  r = await B.evaluate(`
-    skipStep('consent');
-    await new Promise(r => setTimeout(r, 500));
-    return {
-      step: currentStep,
-      skipped: skippedSteps.slice(),
-      cameraOff: !videoStream,
-      items: document.querySelectorAll('#factors-summary li').length,
-      warned: /تم تخطّي/.test(document.getElementById('factors-summary').innerText),
-      boxClass: document.getElementById('factors-summary').className,
-      status: ${status()},
-      verified: sessionStorage.getItem('fv_verified')
-    };`);
-  t.check('تخطّي الموافقة ينهي العملية مباشرة', r.step, 'done');
-  t.check('تخطّي الموافقة يتخطّى الوجه والعنصر معاً', r.skipped.sort(), ['consent', 'face', 'scan', 'totp', 'webauthn']);
-  t.check('عدم تشغيل الكاميرا بعد تخطّي الموافقة', r.cameraOff, true);
-  t.check('الملخّص يعرض كل العوامل', r.items, 6);
-  t.check('الملخّص يحذّر من التخطّي', r.warned, true);
-  t.check('الملخّص يأخذ شكل التحذير', /warn/.test(r.boxClass), true);
-  t.check('رسالة الحالة تنبّه للتخطّي', /تخطّي بعض العوامل/.test(r.status), true);
-
-  r = await B.evaluate(`
-    const log = readLog();
-    return {
-      skipLogged: log.filter(e => /تخطّى المستخدم|تخطٍّ تلقائي/.test(e.msg)).length,
-      allMarkedFail: log.filter(e => /تخطّى المستخدم|تخطٍّ تلقائي/.test(e.msg)).every(e => e.ok === false)
-    };`);
-  t.check('السجل يوثّق كل تخطٍّ', r.skipLogged >= 5, true);
-  t.check('التخطّي يُسجَّل كعدم اجتياز', r.allMarkedFail, true);
+  t.check('رفض تخطّي TOTP', r.afterTotpSkip, 'totp');
+  t.check('رسالة رفض التخطّي', /لا يمكن تخطّي/.test(r.skipStatus), true);
+  t.check('رفض التخطّي التلقائي أيضاً', r.afterAutoSkip, 'totp');
+  t.check('لا خطوات متخطّاة', r.skipped, 0);
+  t.check('أزرار التخطّي مخفية', r.buttonsHidden, true);
+  t.check('لا يمكن فرض شاشة النجاح قبل اكتمال الخطوات', r.afterForcedDone, 'totp');
 
   /* ---------- 14) حماية الصفحة الداخلية ---------- */
   await B.goto(server.url + '/vault.html');
@@ -534,6 +539,25 @@ try {
     return { path: location.pathname, welcome: (document.getElementById('welcomeUser') || {}).innerText || null };`);
   t.check('الصفحة الداخلية تفتح بعد التحقّق', r.path, '/vault.html');
   t.check('عرض اسم المستخدم', r.welcome, 'مرحباً tester');
+
+  /* ---------- 15) حفظ المحادثة ---------- */
+  r = await B.evaluate(`
+    window.confirm = () => true;
+    sendMessage('حدثني عن الغوص');
+    await new Promise(r => setTimeout(r, 900));
+    const saved = JSON.parse(localStorage.getItem('fv_chat_tester') || '[]');
+    selectSimulator('pop'); selectSimulator('diving');
+    const restored = document.querySelectorAll('#chatBox .msg').length;
+    clearChat();
+    return { saved: saved.length, restored, cleared: localStorage.getItem('fv_chat_tester') === null };`);
+  t.check('حفظ المحادثة في التخزين', r.saved, 2);
+  t.check('استعادة المحادثة', r.restored, 3);
+  t.check('زر مسح المحادثة', r.cleared, true);
+
+  await B.evaluate(`sessionStorage.setItem('fv_verified', '1'); location.replace('vault.html'); return true;`);
+  await sleep(1500);
+  r = await B.evaluate(`return { path: location.pathname };`);
+  t.check('رفض ختم الجلسة البسيط 1', r.path, '/index.html');
 
   await B.evaluate(`sessionStorage.clear(); location.replace('vault.html'); return true;`);
   await sleep(1500);

@@ -14,7 +14,7 @@
     "test:flow": "node tests/flow.test.mjs",
     "test:all": "npm run test && npm run test:flow",
     "serve": "node -e \"import('./tests/cdp.mjs').then(async m => { const s = await m.startServer(process.cwd()); console.log('الموقع يعمل على ' + s.url); })\"",
-    "deploy": "npm run test && git add -A && git commit -m \"تحديث\" && git push"
+    "deploy": "sh scripts/push.sh"
   },
   "repository": {
     "type": "git",
